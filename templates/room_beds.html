@@ -8,14 +8,22 @@
         .bed-box {
             background-color: #00b7ff;
             color: white;
-            padding: 40px;
-            margin: 20px 0;
             text-align: center;
             font-weight: bold;
             border-radius: 5px;
             cursor: pointer;
             display: block;
             text-decoration: none;
+
+              /* 침대 크기 (여기서 수정) */
+            width: 180px;
+            height: 100px;
+
+            /* 침대 내부 여백 */
+            padding: 15px;
+
+            /* 침대 사이 간격 (여기서 수정) */
+            margin: 15px;
         }
         .floor-title {
             background-color: #007bff;
@@ -30,12 +38,18 @@
             margin-left: auto;
             margin-right: auto;
         }
+        /* ▼▼▼ [새로 추가] 오른쪽 정렬을 위한 CSS 클래스 ▼▼▼ */
+        .right-align-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end; /* 핵심: 아이템들을 오른쪽 끝으로 정렬 */
+        }
     </style>
 </head>
 <body>
     <div class="container container-custom border rounded">
-        <a href="{{ url_for('floor_dashboard', floor_num=room_number[0]) }}" style="display: inline-block; margin: 10px 0; font-size: 24px; color: #007bff; text-decoration: none; font-weight: bold;">
-            &larr; 
+        <a href="#" id="back-to-rooms" style="display: inline-block; margin: 10px 0; font-size: 24px; color: #007bff; text-decoration: none; font-weight: bold;">
+            &larr; 방 목록으로
         </a>
         <div class="floor-title">{{ room_number }} 침대 대시보드</div>
         <div class="row">
@@ -44,6 +58,7 @@
                 <div class="bed-box">{{ bed }}</div>
                 {% endfor %}
             </div>
+
             <div class="col-6">
                 {% for bed in beds_right %}
                 <div class="bed-box">{{ bed }}</div>
@@ -51,5 +66,20 @@
             </div>
         </div>
     </div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+    // 뒤로가기 버튼 클릭하면 AJAX로 방 목록 다시 로드 (예시)
+    $('#back-to-rooms').click(function(e){
+        e.preventDefault();
+        // 방 목록 로드 함수 호출 (index.js 등에서 정의 필요)
+        if(window.loadFloorRooms){
+            window.loadFloorRooms(currentFloor || 1);
+        }
+        // 침대 대시보드 해제
+        $('#beds-area').html('');
+    });
+</script>
+
 </body>
 </html>

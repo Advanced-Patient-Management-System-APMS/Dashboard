@@ -1,0 +1,44 @@
+<style>
+.room-box {
+  /* ▼▼▼ 방 스타일은 이제 여기서만 관리하세요 ▼▼▼ */
+  background-color: #00b7ff;
+  color: white;
+  text-align: center;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 5px;
+
+  /* 방 크기 */
+  width: 180px;
+  height: 100px;
+  
+  /* 방 내부 여백 */
+  padding: 20px;
+
+  /* ▼▼▼ 방 사이 간격 (이 값을 조절하세요) ▼▼▼ */
+  margin: 40px; 
+  
+  /* 글자 중앙 정렬을 위한 Flexbox 설정 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+</style>
+
+
+<div class="row">
+    <div class="col-6">
+        {% for room in left_rooms %}
+        <div class="room-box" data-room="{{ room.name }}">
+            {{ room.name }}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="col-6">
+        {% for room in right_rooms %}
+        <div class="room-box" data-room="{{ room.name }}">
+            {{ room.name }}
+        </div>
+        {% endfor %}
+    </div>
+</div>

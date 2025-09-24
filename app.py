@@ -1,36 +1,27 @@
+# app.py
+
 from flask import Flask, render_template
 
 app = Flask(__name__)
 
 @app.route('/')
-def select_floor():
-    floors = ["1층", "2층", "3층"]
-    return render_template('select_floor.html', floors=floors)
+def index():
+    return render_template('index.html')
 
-@app.route('/floor/<int:floor_num>')
-def floor_dashboard(floor_num):
-    floor_name = f"{floor_num}층"
-    # 예시: 101~104, 105~108
-    left_rooms = [f"{floor_num}0{j}호" for j in range(1, 5)]
-    right_rooms = [f"{floor_num}0{j}호" for j in range(5, 9)]
-    return render_template('floor_dashboard.html',
-                           floor_name=floor_name,
-                           left_rooms=left_rooms,
-                           right_rooms=right_rooms)
+@app.route('/api/floor_rooms/<int:floor_num>')
+def api_floor_rooms(floor_num):
+    # 'name' 키를 가진 딕셔너리 리스트를 반환합니다.
+    left_rooms = [{'name': f"{floor_num}0{i}호"} for i in range(1, 5)]
+    right_rooms = [{'name': f"{floor_num}0{i}호"} for i in range(5, 9)]
+    return render_template('floor_rooms.html', left_rooms=left_rooms, right_rooms=right_rooms)
 
-# room info
-@app.route('/room/<room_number>')
-def room_detail(room_number):
-    # 예시: 8개 침대 좌우 배치
-    beds = [f"{i}번 침대" for i in range(1, 9)]
-    beds_left = beds[:4]
-    beds_right = beds[4:]
-    return render_template('room_detail.html',
-                           room_number=room_number,
-                           beds_left=beds_left,
-                           beds_right=beds_right)
-
+# ▼▼▼ [수정] 방 상세 정보를 위한 API (주소 확인!) ▼▼▼
+@app.route('/api/room_beds/<room_name>')
+def api_room_beds(room_name):
+    # 예시 데이터로 8개의 침대를 생성합니다.
+    left_beds = [f"침대 {i}" for i in range(1, 5)]
+    right_beds = [f"침대 {i}" for i in range(5, 9)]
+    return render_template('room_beds.html', room_number=room_name, beds_left=left_beds, beds_right=right_beds)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
-
+    app.run(host='0.0.0.0', port=5000, debug=True)
