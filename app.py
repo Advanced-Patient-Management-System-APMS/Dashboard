@@ -18,7 +18,7 @@ def floor_dashboard(floor_num):
                            left_rooms=left_rooms,
                            right_rooms=right_rooms)
 
-
+# room info
 @app.route('/room/<room_number>')
 def room_detail(room_number):
     # 예시: 8개 침대 좌우 배치
