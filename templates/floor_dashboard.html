@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <title>{{ floor_name }} 배치도</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <style>
+      .container-custom {
+        margin-top: 50px;
+        max-width: 540px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .floor-title {
+        background-color: #007bff;
+        padding: 10px;
+        color: white;
+        font-weight: 600;
+        text-align: center;
+        border-radius: 4px 4px 0 0;
+        margin-bottom: 0;
+      }
+      .room-box {
+        background-color: #00b7ff;
+        color: white;
+        padding: 60px 0;
+        margin: 20px 0;
+        text-align: center;
+        font-weight: bold;
+        border-radius: 5px;
+        cursor: pointer;
+        display: block;
+        text-decoration: none;
+      }
+      .back-arrow {
+        display: inline-block;
+        font-size: 25px;
+        color: #007bff;
+        margin-bottom: 7px;
+        text-decoration: none;
+        font-weight: bold;
+        position: absolute;
+        left: 30px;
+        top: 15px;
+      }
+    </style>
+</head>
+<body>
+  <div class="container container-custom border rounded">
+    <a href="{{ url_for('select_floor') }}" class="back-arrow">&larr;</a>
+    <div class="floor-title">{{ floor_name }}</div>
+    <div class="row">
+      <div class="col-6">
+        {% for room in left_rooms %}
+          <a href="{{ url_for('room_detail', room_number=room) }}" class="room-box">{{ room }}</a>
+        {% endfor %}
+      </div>
+      <div class="col-6">
+        {% for room in right_rooms %}
+          <a href="{{ url_for('room_detail', room_number=room) }}" class="room-box">{{ room }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
