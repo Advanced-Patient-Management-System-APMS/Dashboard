@@ -23,18 +23,44 @@
   align-items: center;
   justify-content: center;
 }
+
+.col-6 {
+  display: flex;
+  flex-direction: column;
+}
+
+.col-6.left {
+  align-items: flex-start; /* 좌측 정렬 */
+}
+
+.col-6.right {
+  align-items: flex-end;   /* 우측 정렬 */
+}
+
+/* 왼쪽 방 박스 오른쪽에 마진 */
+.left .room-box {
+  margin-right: 40px;
+  margin-left: 20;
+}
+
+/* 오른쪽 방 박스 왼쪽에 마진 */
+.right .room-box {
+  margin-left: 40px;
+  margin-right: 20;
+}
+
 </style>
 
 
 <div class="row">
-    <div class="col-6">
+    <div class="col-6 left">
         {% for room in left_rooms %}
         <div class="room-box" data-room="{{ room.name }}">
             {{ room.name }}
         </div>
         {% endfor %}
     </div>
-    <div class="col-6">
+    <div class="col-6 right">
         {% for room in right_rooms %}
         <div class="room-box" data-room="{{ room.name }}">
             {{ room.name }}

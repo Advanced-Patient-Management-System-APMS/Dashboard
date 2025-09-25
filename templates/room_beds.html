@@ -2,84 +2,104 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8" />
-    <title>{{ room_number }} 침대 대시보드</title>
+    <title>{{ room_number }} 호</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <style>
-        .bed-box {
-            background-color: #00b7ff;
-            color: white;
-            text-align: center;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            display: block;
-            text-decoration: none;
-
-              /* 침대 크기 (여기서 수정) */
-            width: 180px;
-            height: 100px;
-
-            /* 침대 내부 여백 */
-            padding: 15px;
-
-            /* 침대 사이 간격 (여기서 수정) */
-            margin: 15px;
-        }
-        .floor-title {
-            background-color: #007bff;
-            padding: 10px 15px;
-            color: white;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
         .container-custom {
             margin-top: 50px;
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
+            background-color: #f5f5f0;
+            padding-bottom: 5px
         }
-        /* ▼▼▼ [새로 추가] 오른쪽 정렬을 위한 CSS 클래스 ▼▼▼ */
-        .right-align-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end; /* 핵심: 아이템들을 오른쪽 끝으로 정렬 */
-        }
+
+    /* ▼▼▼ [수정] 헤더 영역: absolute의 기준점이 되도록 position: relative 추가 ▼▼▼ */
+    .header-row {
+        display: flex;
+        align-items: center;
+        padding: 10px 0;
+        position: relative; /* 자식 요소의 absolute 위치 기준 */
+        justify-content: center; /* 제목을 중앙에 오도록 함 */
+    }
+    
+    /* ▼▼▼ [수정] 뒤로가기 버튼: 공중에 띄워서 고정 ▼▼▼ */
+    #back-to-rooms {
+        position: absolute;      /* 공중에 띄움 */
+        left: 20px;              /* 왼쪽에서 20px 떨어진 곳에 위치 */
+        top: 50%;                /* 위에서 50% 위치 */
+        transform: translateY(-50%); /* 세로축 정중앙에 오도록 미세 조정 */
+
+        font-size: 60px;         /* 화살표 크기는 그대로 유지 */
+        font-weight: bold;
+        text-decoration: none;
+        color: #007bff;
+        /* padding 삭제: 더 이상 다른 요소를 밀어내지 않음 */
+    }
+
+    /* ▼▼▼ [수정] 제목 스타일: margin 규칙 단순화 ▼▼▼ */
+    .floor-title {
+        background-color: #acf7b8;
+        padding: 10px 25px; /* 좌우 패딩을 늘려 보기 좋게 */
+        color: rgb(19, 12, 12);
+        font-weight: 1000;
+        text-align: center;
+        border-radius: 5px;
+        /* margin: auto 삭제: 부모인 header-row가 중앙 정렬을 담당 */
+    }
+        /* ▼▼▼ [추가] 문 박스 스타일 ▼▼▼ */
+    .door-box {
+        background-color: #7a4a2b; /* 문 색상 */
+        color: white;
+        text-align: center;
+        font-weight: bold;
+        border-radius: 5px;
+        width: 150px;  /* 문 너비 */
+        height: 30px;  /* 문 높이 */
+        padding: 10px;
+        margin: 30px auto 10px auto; /* 위쪽 여백 크게, 좌우 auto로 중앙 정렬 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        /* --- 침대 관련 스타일 (이전과 동일) --- */
+        .bed-box img { width: 200px; height: 120px; vertical-align: middle; margin-right: 3px; }
+        .bed-box { background-color: #b4e4b5; border-radius: 8px; display: flex; justify-content: center; align-items: center; width: 180px; height: 120px; margin: 20px; }
+        .col-6 { display: flex; flex-direction: column; }
+        .col-6.left { align-items: flex-start; }
+        .col-6.right { align-items: flex-end; }
+        .left .bed-box { margin-right: 15px; margin-left: 0; }
+        .right .bed-box { margin-left: 15px; margin-right: 0; }
     </style>
 </head>
 <body>
-    <div class="container container-custom border rounded">
-        <a href="#" id="back-to-rooms" style="display: inline-block; margin: 10px 0; font-size: 24px; color: #007bff; text-decoration: none; font-weight: bold;">
-            &larr; 방 목록으로
-        </a>
-        <div class="floor-title">{{ room_number }} 침대 대시보드</div>
+    <div class="container container-custom border rounded p-3">
+
+        <div class="header-row">
+            <a href="#" id="back-to-rooms">
+                &larr;
+            </a>
+            <div class="floor-title">{{ room_number }}</div>
+        </div>
+
         <div class="row">
-            <div class="col-6">
+            <div class="col-6 left">
                 {% for bed in beds_left %}
-                <div class="bed-box">{{ bed }}</div>
+                <div class="bed-box">
+                    <img src="{{ url_for('static', filename='bed_left.jpg') }}">
+                </div>
                 {% endfor %}
             </div>
-
-            <div class="col-6">
+            <div class="col-6 right">
                 {% for bed in beds_right %}
-                <div class="bed-box">{{ bed }}</div>
+                <div class="bed-box">
+                    <img src="{{ url_for('static', filename='bed_right.jpg') }}">
+                </div>
                 {% endfor %}
             </div>
         </div>
+        <div class="door-box">
+            문
+        </div>
     </div>
-
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script>
-    // 뒤로가기 버튼 클릭하면 AJAX로 방 목록 다시 로드 (예시)
-    $('#back-to-rooms').click(function(e){
-        e.preventDefault();
-        // 방 목록 로드 함수 호출 (index.js 등에서 정의 필요)
-        if(window.loadFloorRooms){
-            window.loadFloorRooms(currentFloor || 1);
-        }
-        // 침대 대시보드 해제
-        $('#beds-area').html('');
-    });
-</script>
-
-</body>
-</html>
