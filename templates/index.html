@@ -198,8 +198,8 @@ $(function() {
                 patients.forEach(function(p) {
                     patientListHtml += `
                         <li class="list-group-item">
-                            <span class="fw-bold me-3">${p['patient name']}</span>
-                            <small class="text-muted">(${p.gender}, ${p.age}세, ${p['bed number']}번 침대)</small>
+                            <span class="fw-bold me-3">${p['patient_name']}</span>
+                            <small class="text-muted">(${p.gender}, ${p.age}세, ${p['bed_number']}번 침대)</small>
                         </li>`;
                 });
                 patientListHtml += '</ul>';
