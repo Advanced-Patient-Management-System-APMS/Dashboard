@@ -1,69 +1,105 @@
 <style>
-.room-box {
-  /* ▼▼▼ 방 스타일은 이제 여기서만 관리하세요 ▼▼▼ */
-  background-color: #00b7ff;
-  color: white;
-  text-align: center;
-  font-weight: bold;
-  cursor: pointer;
-  border-radius: 5px;
+    /* 방 박스의 기본 스타일 */
+    .room-box {
+        background-color: #1b2835;
+        border: 5px solid #015331;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        width: 100%;
+        height: 350px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* 평소에는 콘텐츠를 중앙 정렬 */
+        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        z-index: 1;
+    }
 
-  /* 방 크기 */
-  width: 180px;
-  height: 100px;
-  
-  /* 방 내부 여백 */
-  padding: 20px;
+    /* ▼▼▼ [수정] 확대/축소 애니메이션 효과 ▼▼▼ */
+    .rooms-container.zoomed-in .room-box {
+        opacity: 0; /* 선택되지 않은 방들은 투명하게 사라짐 */
+        pointer-events: none; /* 사라진 방들은 클릭되지 않도록 함 */
+    }
 
-  /* ▼▼▼ 방 사이 간격 (이 값을 조절하세요) ▼▼▼ */
-  margin: 40px; 
-  
-  /* 글자 중앙 정렬을 위한 Flexbox 설정 */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    .rooms-container.zoomed-in .room-box.selected {
+        opacity: 1;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60vw;
+        height: 70vh; /* 높이를 조금 더 키움 */
+        z-index: 100;
+        pointer-events: auto;
+        
+        /* ▼▼▼ [수정] 확대되었을 때, 콘텐츠를 위쪽부터 정렬 ▼▼▼ */
+        justify-content: flex-start;
+        padding-top: 30px;
+    }
 
-.col-6 {
-  display: flex;
-  flex-direction: column;
-}
+    /* ▼▼▼ [추가] 어두운 배경 오버레이 스타일 ▼▼▼ */
+    .rooms-container::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.7); /* 반투명 검은색 배경 */
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+        z-index: 50;
+    }
 
-.col-6.left {
-  align-items: flex-start; /* 좌측 정렬 */
-}
+    .rooms-container.zoomed-in::before {
+        opacity: 1; /* 줌인 상태일 때만 배경을 어둡게 */
+        pointer-events: auto;
+    }
 
-.col-6.right {
-  align-items: flex-end;   /* 우측 정렬 */
-}
-
-/* 왼쪽 방 박스 오른쪽에 마진 */
-.left .room-box {
-  margin-right: 40px;
-  margin-left: 20;
-}
-
-/* 오른쪽 방 박스 왼쪽에 마진 */
-.right .room-box {
-  margin-left: 40px;
-  margin-right: 20;
-}
-
+    /* ▼▼▼ [수정] 환자 목록 컨테이너 스타일 ▼▼▼ */
+    .patient-list-container {
+        width: 100%;
+        padding: 20px;
+        margin-top: 20px;
+        border-top: 1px solid #e0e0e0;
+        display: none; /* JS로 제어하기 위해 기본은 숨김 */
+    }
 </style>
 
-
-<div class="row">
-    <div class="col-6 left">
-        {% for room in left_rooms %}
-        <div class="room-box" data-room="{{ room.name }}">
-            {{ room.name }}
+<div class="rooms-container">
+    <div class="row g-3">
+        {% for room in top_row_rooms %}
+        <div class="col-12 col-md-3">
+            <div class="room-box" data-room="{{ room.name }}">
+                <div class="room-name">{{ room.name }}</div>
+                <div class="patient-info">
+                    {% if room.patient != "환자 없음" %}
+                        <span class="status-occupied">{{ room.patient }}</span>
+                    {% else %}
+                        <span class="status-vacant">{{ room.patient }}</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>
-    <div class="col-6 right">
-        {% for room in right_rooms %}
-        <div class="room-box" data-room="{{ room.name }}">
-            {{ room.name }}
+
+    <div class="row g-3 mt-3">
+        {% for room in bottom_row_rooms %}
+        <div class="col-12 col-md-3">
+            <div class="room-box" data-room="{{ room.name }}">
+                <div class="room-name">{{ room.name }}</div>
+                <div class="patient-info">
+                    {% if room.patient != "환자 없음" %}
+                        <span class="status-occupied">{{ room.patient }}</span>
+                    {% else %}
+                        <span class="status-vacant">{{ room.patient }}</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
         {% endfor %}
     </div>

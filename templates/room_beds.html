@@ -77,7 +77,7 @@
     <div class="container container-custom border rounded p-3">
 
         <div class="header-row">
-            <a href="#" id="back-to-rooms">
+            <a href="#" id="back-to-rooms" class="back-btn">
                 &larr;
             </a>
             <div class="floor-title">{{ room_number }}</div>
@@ -86,20 +86,35 @@
         <div class="row">
             <div class="col-6 left">
                 {% for bed in beds_left %}
-                <div class="bed-box">
-                    <img src="{{ url_for('static', filename='bed_left.jpg') }}">
+                <div class="bed-box" {% if bed.patient %}data-patient-name="{{ bed.patient }}"{% endif %}>
+                    <strong>{{ bed.num }}번 침대</strong>
+                    <hr style="width: 80%; margin: 5px 0;">
+                    {% if bed.patient %}
+                        {{ bed.patient }}
+                    {% else %}
+                        <span style="color: #6c757d;">(빈 침대)</span>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
+
             <div class="col-6 right">
                 {% for bed in beds_right %}
-                <div class="bed-box">
-                    <img src="{{ url_for('static', filename='bed_right.jpg') }}">
+                <div class="bed-box" {% if bed.patient %}data-patient-name="{{ bed.patient }}"{% endif %}>
+                    <strong>{{ bed.num }}번 침대</strong>
+                    <hr style="width: 80%; margin: 5px 0;">
+                    {% if bed.patient %}
+                        {{ bed.patient }}
+                    {% else %}
+                        <span style="color: #6c757d;">(빈 침대)</span>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
         </div>
+        
         <div class="door-box">
             문
         </div>
     </div>
+</body>

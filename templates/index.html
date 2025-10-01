@@ -6,89 +6,213 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-  
-    <style>
-
-        body {
-            background-color: #f4f7f9;
-            font-family: 'Noto Sans KR', sans-serif;
-        }
-        /* 스타일 부분은 그대로 유지 */
-        .floor-btn { cursor: pointer; width: 120px; display: inline-block; padding: 8px 0; background-color: #007bff; color: white; text-align: center; font-weight: 600; font-size: 17px; border-radius: 3px; margin-right: 4px; }
-        .floor-btn.active { background-color: #0056b3; }
-        .container-custom { max-width: 800px; margin: 30px auto; }
-        .room-box { cursor: pointer; background-color: #00b7ff; color: white; margin: 15px; padding: 20px; text-align: center; font-weight: bold; border-radius: 5px; display: flex; align-items: center; justify-content: center; width: 150px; height: 100px; }
-        .bed-box { background-color: #4CAF50; color: white; padding: 15px; margin: 10px; border-radius: 5px; text-align: center; }
     
-        .header-logo {
-            position: fixed;   /* 화면에 고정 */
-            top: 25px;         /* 위에서 25px 떨어진 곳 */
-            right: 30px;       /* 오른쪽에서 30px 떨어진 곳 */
-            width: 180px;      /* 로고 너비 (원하는 크기로 조절) */
-            z-index: 1000;     /* 다른 요소들보다 항상 위에 있도록 설정 */
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #212529;
+            font-family: 'Noto Sans KR', sans-serif;
+            color: #f8f9fa; /* 기본 글자색을 밝게 */
         }
-        .room-box:hover {
-            transform: translateY(-5px);
-            border-color: #4a90e2;
-            background-color: #87b9e9;
-            box-shadow: 0 6px 15px rgba(74, 144, 226, 0.2);
+
+        #realtime-clock {
+            position: fixed;
+            top: 25px;
+            right: 30px;
+            font-size: 1.1em;
+            font-weight: 500;
+            color: #e9ecef; /* 밝은 글자색 */
+            background-color: rgba(73, 80, 87, 0.8); /* 반투명 어두운 배경 */
+            padding: 8px 15px;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+
+        .tab-layout-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            max-width: none;
+        }
+
+        #bookmark-tabs {
+            padding-top: 60px;
+            background-color: #343a40;
+            z-index: 2;
+            flex-shrink: 0;
+        }
+        #bookmark-tabs .floor-btn {
+            display: block;
+            min-width: 150px;
+            padding: 15px 25px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 500;
+            border: none;
+            border-bottom: 1px solid #495057;
+            background-color: transparent;
+            color: #adb5bd;
+            border-radius: 0;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+        }
+        #bookmark-tabs .floor-btn.active,
+        #bookmark-tabs .floor-btn:hover {
+            background-color: #0d6efd;
+            color: white;
+        }
+        
+        #main-content-box {
+            flex-grow: 1;
+            background-color: #212529;
+            padding: 30px;
+            overflow-y: auto;
+            z-index: 1;
+        }
+
+        .main-title {
+            font-size: 2.2em;
+            font-weight: 700;
+            color: #f8f9fa; /* 밝은 글자색 */
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #current-floor-title {
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #495057;
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #f8f9fa;
         }
     </style>
-    
 </head>
 <body>
 
-<img src="{{ url_for('static', filename='ajou_hospital.jpg') }}" alt="아주대병원 로고" class="header-logo">
+<!-- ▼▼▼ [수정] 로고 img 태그 삭제, 시계 div 추가 ▼▼▼ -->
+<div id="realtime-clock"></div>
 
-<div class="container container-custom">
-    <div id="floor-view">
-        <div id="tabs">
-            <div class="floor-btn active" data-floor="1">1층</div>
-            <div class="floor-btn" data-floor="2">2층</div>
-            <div class="floor-btn" data-floor="3">3층</div>
-        </div>
-        <div id="rooms-area" class="border rounded mt-2 p-2">
-            </div>
+<div class="tab-layout-container">
+    <div id="bookmark-tabs">
+        <div class="floor-btn active" data-floor="1">1층</div>
+        <div class="floor-btn" data-floor="2">2층</div>
+        <div class="floor-btn" data-floor="3">3층</div>
     </div>
+    <div id="main-content-box">
+        <!-- ▼▼▼ [수정] 메인 제목 추가 ▼▼▼ -->
+        <h1 class="main-title">병실 환자 현황</h1>
 
-    <div id="beds-area" style="display: none;">
+        <div id="floor-view">
+            <div id="current-floor-title"></div>
+            <div id="rooms-area"></div>
         </div>
+        <div id="beds-area" style="display: none;"></div>
+    </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ▼▼▼ [최종] JavaScript 코드 ▼▼▼
+// ▼▼▼ [최종] 중복을 제거한 완전한 JavaScript 코드 ▼▼▼
 $(function() {
-    function loadFloorRooms(floor) {
+    // 실시간 시계 기능
+    function updateClock() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const timeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        $('#realtime-clock').text(timeString);
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 층 정보 업데이트 함수
+    function updateContent(floor) {
+        $('#current-floor-title').text(floor + '층 병동');
         $.get('/api/floor_rooms/' + floor, function(html) {
             $('#rooms-area').html(html);
         });
     }
-    loadFloorRooms(1); // 초기 1층 로드
 
-    $('#tabs').on('click', '.floor-btn', function() {
-        $('.floor-btn').removeClass('active');
+    // --- 이벤트 핸들러 ---
+
+    // 1. 페이지 첫 로드 시 1층 정보 불러오기
+    updateContent(1);
+
+    // 2. 책갈피 탭 클릭 이벤트 (중복 제거 후 하나만 남김)
+    $('#bookmark-tabs').on('click', '.floor-btn', function() {
+        $('#bookmark-tabs .floor-btn').removeClass('active');
         $(this).addClass('active');
-        loadFloorRooms($(this).data('floor'));
+        var floor = $(this).data('floor');
+        updateContent(floor);
+
+        // 다른 층으로 이동 시, 확대된 방과 환자 목록 초기화
+        // JavaScript가 찾는 부모 컨테이너 클래스 이름 확인 (.floor-plan-grid 또는 .rooms-container)
+        $('#rooms-area').find('.zoomed-in').removeClass('zoomed-in');
+        $('#rooms-area').find('.selected').removeClass('selected');
+        $('#patient-list-area').slideUp();
     });
 
-    // 방 클릭 시: 방 목록 숨기고 침대 목록 보여주기
+    // ▼▼▼ [수정] 방 클릭 이벤트를 아래 로직으로 완전히 교체 ▼▼▼
     $(document).on('click', '.room-box', function() {
-        var room = $(this).data('room');
-        $.get('/api/room_beds/' + room, function(html) {
-            $('.header-logo').hide(); // [추가] 로고를 숨깁니다.
-            $('#floor-view').hide();
-            $('#beds-area').html(html).show();
+        var roomBox = $(this);
+        var roomName = roomBox.data('room');
+        var container = roomBox.closest('.rooms-container');
+
+        // 1. 이미 선택된 방을 다시 클릭하면, 선택 해제
+        if (roomBox.hasClass('selected')) {
+            roomBox.removeClass('selected');
+            container.removeClass('zoomed-in');
+            // 박스 안에 있는 환자 목록을 찾아서 숨김
+            roomBox.find('.patient-list-container').slideUp();
+            return;
+        }
+
+        // 2. 다른 방이 선택되어 있었다면 먼저 초기화
+        container.find('.room-box.selected').removeClass('selected');
+        container.removeClass('zoomed-in');
+        $('.patient-list-container').slideUp();
+
+        // 3. 현재 클릭한 방에 효과 적용
+        roomBox.addClass('selected');
+        container.addClass('zoomed-in');
+
+        // 4. 환자 목록을 담을 컨테이너가 없으면, 박스 안에 새로 생성
+        if (roomBox.find('.patient-list-container').length === 0) {
+            roomBox.append('<div class="patient-list-container"></div>');
+        }
+        var patientListContainer = roomBox.find('.patient-list-container');
+        
+        // 5. 환자 목록 API 호출 및 표시
+        $.get('/api/patients_in_room/' + roomName, function(patients) {
+            var patientListHtml = `<h4 class="mb-3">환자 현황</h4>`;
+            if (patients && patients.length > 0) {
+                patientListHtml += '<ul class="list-group list-group-flush">';
+                patients.forEach(function(p) {
+                    patientListHtml += `
+                        <li class="list-group-item">
+                            <span class="fw-bold me-3">${p['patient name']}</span>
+                            <small class="text-muted">(${p.gender}, ${p.age}세, ${p['bed number']}번 침대)</small>
+                        </li>`;
+                });
+                patientListHtml += '</ul>';
+            } else {
+                patientListHtml += '<p class="text-muted">현재 입원한 환자가 없습니다.</p>';
+            }
+
+            // 박스 안의 환자 목록 컨테이너에 내용을 채우고 보여줌
+            patientListContainer.html(patientListHtml).slideDown();
         });
     });
 
-    // '뒤로가기' 버튼 클릭 시: 침대 목록 숨기고 방 목록 보여주기
-    $(document).on('click', '#back-to-rooms', function(e) {
-        e.preventDefault();
-        $('.header-logo').show(); // [추가] 숨겼던 로고를 다시 보여줍니다.
-        $('#beds-area').hide().html('');
-        $('#floor-view').show();
-    });
+    // beds-area 와 back-to-rooms 관련 이벤트는 확대/축소 기능으로 대체되었으므로 삭제합니다.
 });
 </script>
 
