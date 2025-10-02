@@ -126,12 +126,43 @@
             /* 슬라이드 효과는 이미 slide-menu에 있으므로 필요 없음 */
         }
 
+        /* ▼▼▼ [추가] 사용자 환영 메시지 스타일 ▼▼▼ */
+        #user-welcome {
+            position: fixed;
+            top: 65px;      /* 시계(top: 25px)보다 아래에 위치 */
+            right: 30px;
+            color: #adb5bd; /* 약간 밝은 회색 글자 */
+            font-size: 1.1em;
+            z-index: 1000;
+            text-align: right; /* 오른쪽 정렬 */
+            font-weight: 500;
+        }
+
+        /* ▼▼▼ [추가] 로그아웃 링크 스타일 ▼▼▼ */
+        .logout-link {
+            color: #ced4da;
+            text-decoration: underline;
+            font-size: 0.9em;
+            margin-left: 8px;
+        }
+        .logout-link:hover {
+            color: white;
+        }
+
     </style>
 </head>
 <body>
 
 <!-- ▼▼▼ [수정] 로고 img 태그 삭제, 시계 div 추가 ▼▼▼ -->
 <div id="realtime-clock"></div>
+
+    {% if full_name %}
+    <div id="user-welcome">
+        {{ full_name }}님, 환영합니다.
+        <a href="{{ url_for('logout') }}" class="logout-link">(로그아웃)</a>
+    </div>
+    {% endif %}
+
 <div id="slide-menu" class="slide-menu">
     <button id="menu-toggle-btn">
         <i class="fas fa-bars"></i>
@@ -159,8 +190,11 @@
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ▼▼▼ [최종] 중복을 제거한 완전한 JavaScript 코드 ▼▼▼
+// ▼▼▼ [최종] 모든 기능이 통합된 JavaScript 코드 ▼▼▼
 $(function() {
+    
+    // --- 함수 정의 ---
+    
     // 실시간 시계 기능
     function updateClock() {
         const now = new Date();
@@ -173,8 +207,6 @@ $(function() {
         const timeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         $('#realtime-clock').text(timeString);
     }
-    setInterval(updateClock, 1000);
-    updateClock();
 
     // 층 정보 업데이트 함수
     function updateContent(floor) {
@@ -184,113 +216,97 @@ $(function() {
         });
     }
 
+    // --- 초기 실행 ---
+
+    setInterval(updateClock, 1000);
+    updateClock();
+    updateContent(1); // 페이지 첫 로드 시 1층 정보 불러오기
+
     // --- 이벤트 핸들러 ---
 
-    // 1. 페이지 첫 로드 시 1층 정보 불러오기
-    updateContent(1);
-
-    // 책갈피 탭 클릭 이벤트 유지 (문제 없음)
+    // 1. 층 탭(사이드바) 클릭 이벤트
     $('#bookmark-tabs').on('click', '.floor-btn', function() {
         $('#bookmark-tabs .floor-btn').removeClass('active');
         $(this).addClass('active');
         var floor = $(this).data('floor');
         updateContent(floor);
 
-        // 확대/선택 초기화
-        $('#rooms-area').find('.zoomed-in').removeClass('zoomed-in');
-        $('#rooms-area').find('.selected').removeClass('selected');
+        // 다른 층으로 이동 시 확대된 방 초기화
+        $('#rooms-area .rooms-container').removeClass('zoomed-in');
+        $('#rooms-area .room-box').removeClass('selected');
         $('#patient-list-area').slideUp();
     });
 
-    $(function(){
-        // 메뉴 토글 버튼 ID와 일치시킴
-        $('#menu-toggle-btn').on('click', function(e) {
-            e.stopPropagation();
-            $('#slide-menu').toggleClass('open');
-            // ▼▼▼ [추가] 컨테이너에 클래스 토글 ▼▼▼
-            $('.tab-layout-container').toggleClass('menu-open'); 
-            
-            // 아이콘 변경 (선택 사항)
-            var icon = $(this).find('i');
-            if ($('#slide-menu').hasClass('open')) {
-                icon.removeClass('fa-bars').addClass('fa-times'); // X 아이콘
-            } else {
-                icon.removeClass('fa-times').addClass('fa-bars'); // 메뉴 아이콘
-            }
-        });
-
-        $(document).on('click', function(e) {
-            if ($('#slide-menu').hasClass('open')) {
-                if (!$(e.target).closest('#slide-menu, #menu-toggle-btn').length) {
-                    $('#slide-menu').removeClass('open');
-                    // ▼▼▼ [추가] 컨테이너 클래스 제거 ▼▼▼
-                    $('.tab-layout-container').removeClass('menu-open');
-                    
-                    // 아이콘 복원
-                    $('#menu-toggle-btn').find('i').removeClass('fa-times').addClass('fa-bars');
-                }
-            }
-        });
-
-    });
-
-
-
     // ▼▼▼ [수정] 방 클릭 이벤트를 아래 로직으로 완전히 교체 ▼▼▼
-    $(document).on('click', '.room-box', function() {
+    // 2. 방 클릭 이벤트 (확대 및 환자 목록 표시)
+    $(document).on('click', '.room-box', function(e) {
+        e.stopPropagation();
         var roomBox = $(this);
         var roomName = roomBox.data('room');
-        var container = roomBox.closest('.rooms-container');
+        var container = roomBox.closest('.rooms-container, .floor-plan-grid');
 
-        // 1. 이미 선택된 방을 다시 클릭하면, 선택 해제
         if (roomBox.hasClass('selected')) {
-            roomBox.removeClass('selected');
-            container.removeClass('zoomed-in');
-            // 박스 안에 있는 환자 목록을 찾아서 숨김
-            roomBox.find('.patient-list-container').slideUp();
             return;
         }
 
-        // 2. 다른 방이 선택되어 있었다면 먼저 초기화
-        container.find('.room-box.selected').removeClass('selected');
-        container.removeClass('zoomed-in');
-        $('.patient-list-container').slideUp();
-
-        // 3. 현재 클릭한 방에 효과 적용
+        container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
+        
         roomBox.addClass('selected');
         container.addClass('zoomed-in');
-
-        // 4. 환자 목록을 담을 컨테이너가 없으면, 박스 안에 새로 생성
-        if (roomBox.find('.patient-list-container').length === 0) {
-            roomBox.append('<div class="patient-list-container"></div>');
-        }
-        var patientListContainer = roomBox.find('.patient-list-container');
         
-        // 5. 환자 목록 API 호출 및 표시
         $.get('/api/patients_in_room/' + roomName, function(patients) {
-            var patientListHtml = `<h4 class="mb-3">환자 현황</h4>`;
+            roomBox.append('<div class="patient-list-container"></div>');
+            var patientListContainer = roomBox.find('.patient-list-container');
+
+            // ▼▼▼ [수정] 환자 목록 HTML 생성 로직 ▼▼▼
+            var patientListHtml = `<h4 class="mb-3">${roomName} 환자 현황</h4>`; // H4는 CSS에서 색상 조정
+
             if (patients && patients.length > 0) {
-                patientListHtml += '<ul class="list-group list-group-flush">';
                 patients.forEach(function(p) {
+                    var patientName = p['patient name'] || p.patient_name;
+                    var bedNumber = p['bed number'] || p.bed_no; // 'bed_no'로 변경
+                    
                     patientListHtml += `
-                        <li class="list-group-item">
-                            <span class="fw-bold me-3">${p['patient_name']}</span>
-                            <small class="text-muted">(${p.gender}, ${p.age}세, ${p['bed_number']}번 침대)</small>
-                        </li>`;
+                        <div class="patient-card">
+                            <div class="patient-name-box">${patientName}</div>
+                            <div class="patient-details">
+                                ${p.age}세 / ${p.gender} / ${bedNumber}번 침대
+                            </div>
+                        </div>`;
                 });
-                patientListHtml += '</ul>';
             } else {
                 patientListHtml += '<p class="text-muted">현재 입원한 환자가 없습니다.</p>';
             }
 
-            // 박스 안의 환자 목록 컨테이너에 내용을 채우고 보여줌
             patientListContainer.html(patientListHtml).slideDown();
         });
     });
 
-    // beds-area 와 back-to-rooms 관련 이벤트는 확대/축소 기능으로 대체되었으므로 삭제합니다.
+    // ▼▼▼ [수정] 배경 클릭 시, 박스 안의 환자 목록 컨테이너도 함께 제거 ▼▼▼
+    $(document).on('click', function(e) {
+        var container = $('.rooms-container.zoomed-in, .floor-plan-grid.zoomed-in');
+        if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
+            container.removeClass('zoomed-in');
+            // 선택 해제 시, 박스 안에 동적으로 생성했던 환자 목록 컨테이너를 삭제
+            container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
+        }
+    });
+    
+    // 4. 슬라이드 메뉴 토글 이벤트
+    $('#menu-toggle-btn').on('click', function(e) {
+        e.stopPropagation();
+        $('#slide-menu').toggleClass('open');
+        $('.tab-layout-container').toggleClass('menu-open');
+    });
+
+    // 5. 메뉴 바깥쪽 클릭 시 메뉴 닫기 이벤트
+    $(document).on('click', function(e) {
+        if ($('#slide-menu').hasClass('open') && !$(e.target).closest('#slide-menu').length && !$(e.target).is('#menu-toggle-btn')) {
+            $('#slide-menu').removeClass('open');
+            $('.tab-layout-container').removeClass('menu-open');
+        }
+    });
 });
 </script>
-
 </body>
 </html>

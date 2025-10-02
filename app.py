@@ -1,49 +1,63 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify 
-from flask_mysqldb import MySQL # 1. MySQL 모듈을 import 합니다.
-
+import mysql.connector as login_db
+from mysql.connector import Error
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask_mysqldb import MySQL
+# from flask_bcrypt import Bcrypt # <-- Bcrypt 삭제
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # 세션 암호화를 위해 반드시 필요
+app.secret_key = 'your_secret_key'
+# bcrypt = Bcrypt(app) # <-- Bcrypt 삭제
 
-
-# 2. DB 접속 정보를 설정합니다. (본인의 DB 정보에 맞게 수정)
+# --- 기본 DB (patient_info) 연결 설정 ---
 app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
-app.config['MYSQL_PASSWORD'] = 'Kwangyeon404@' # 재설정한 DB 비밀번호
+app.config['MYSQL_PASSWORD'] = 'Kwangyeon404@'
 app.config['MYSQL_DB'] = 'patient_info'
-app.config['MYSQL_CURSORCLASS'] = 'DictCursor' # 결과를 딕셔너리 형태로 받기 위한 설정 (매우 유용!)
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 
-# 3. Flask 앱과 MySQL을 연결합니다.
-mysql = MySQL(app)
+mysql = MySQL(app) # patient_info DB를 위한 기본 연결 객체
 
-# --- 데이터베이스 대신 사용할 임시 사용자 정보 ---
-# 실제 DB를 사용하지 않으므로, 로그인 테스트는 이 정보로만 가능합니다.
-users = {
-    'user1': 'password123',
-    'admin': 'admin123'
-}
-
-# --- 라우트(경로) 함수 정의 ---
-
-@app.route('/')
-def index():
-    if 'username' in session:
-        return render_template('index.html', username=session['username'])
-    return redirect(url_for('login'))
+# --- 라우트 함수 정의 ---
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        hospital_name = request.form['hospital_name']
         username = request.form['username']
         password = request.form['password']
+        
+        connection = None
+        try:
+            # 로그인 전용 DB(login_data)에 직접 연결
+            connection = login_db.connect(
+                host='localhost',
+                user='root',
+                password='Kwangyeon404@',
+                database='login_data' # 로그인 DB 이름
+            )
+            
+            cursor = connection.cursor(dictionary=True)
+            query = "SELECT * FROM login_staff WHERE username = %s AND hospital = %s"
+            cursor.execute(query, (username, hospital_name))
+            user = cursor.fetchone()
 
-        # 임시 사용자 정보와 일치하는지 확인
-        if username in users and users[username] == password:
-            session['username'] = username
-            flash('로그인 성공!')
-            return redirect(url_for('index'))
-        else:
-            flash('사용자명 또는 비밀번호가 틀립니다.')
+            # ▼▼▼ [핵심 수정] 암호화 비교 대신, 단순 문자열 비교로 변경 ▼▼▼
+            if user and user['password'] == password:
+                session['username'] = user['username']
+                session['full_name'] = user['full_name'] 
+                session['hospital_name'] = user['hospital']
+                flash(f"{user['full_name']}님, 환영합니다!")
+                return redirect(url_for('index'))
+            else:
+                flash('병원, 사용자명 또는 비밀번호가 일치하지 않습니다.')
+
+        except Error as e:
+            print(f"로그인 DB 연결 오류: {e}")
+            flash('데이터베이스 연결에 실패했습니다.')
+        finally:
+            if connection and connection.is_connected():
+                cursor.close()
+                connection.close()
             
     return render_template('login.html')
 
@@ -51,6 +65,14 @@ def login():
 def logout():
     session.pop('username', None)
     flash('로그아웃 되었습니다.')
+    return redirect(url_for('login'))
+
+@app.route('/')
+def index():
+    # ▼▼▼ [수정] index.html 템플릿으로 full_name 전달 ▼▼▼
+    if 'username' in session:
+        # 세션에 저장된 full_name을 템플릿으로 넘겨줍니다.
+        return render_template('index.html', full_name=session.get('full_name'))
     return redirect(url_for('login'))
 
 @app.route('/api/floor_rooms/<int:floor_num>')
