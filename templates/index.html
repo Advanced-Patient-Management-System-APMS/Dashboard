@@ -238,19 +238,16 @@ $(function() {
     });
 
     // ▼▼▼ [수정] 방 클릭 이벤트를 아래 로직으로 완전히 교체 ▼▼▼
-    // 2. 방 클릭 이벤트 (확대 및 환자 목록 표시)
+    // 2. 방 클릭 이벤트 (환자 목록 HTML 생성 로직 수정)
     $(document).on('click', '.room-box', function(e) {
         e.stopPropagation();
         var roomBox = $(this);
         var roomName = roomBox.data('room');
-        var container = roomBox.closest('.rooms-container, .floor-plan-grid');
+        var container = roomBox.closest('.rooms-container');
 
-        if (roomBox.hasClass('selected')) {
-            return;
-        }
+        if (roomBox.hasClass('selected')) return;
 
         container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
-        
         roomBox.addClass('selected');
         container.addClass('zoomed-in');
         
@@ -258,13 +255,13 @@ $(function() {
             roomBox.append('<div class="patient-list-container"></div>');
             var patientListContainer = roomBox.find('.patient-list-container');
 
-            // ▼▼▼ [수정] 환자 목록 HTML 생성 로직 ▼▼▼
-            var patientListHtml = `<h4 class="mb-3">${roomName} 환자 현황</h4>`; // H4는 CSS에서 색상 조정
+            // ▼▼▼ [최종 수정] 스크린샷 디자인에 맞는 HTML 생성 로직 ▼▼▼
+            var patientListHtml = `<h4 class="mb-3">${roomName} 환자 현황</h4>`;
 
             if (patients && patients.length > 0) {
                 patients.forEach(function(p) {
-                    var patientName = p['patient name'] || p.patient_name;
-                    var bedNumber = p['bed number'] || p.bed_no; // 'bed_no'로 변경
+                    var patientName = p.patient_name || p['patient name'];
+                    var bedNumber = p.bed_number || p['bed number'];
                     
                     patientListHtml += `
                         <div class="patient-card">
@@ -278,7 +275,7 @@ $(function() {
                 patientListHtml += '<p class="text-muted">현재 입원한 환자가 없습니다.</p>';
             }
 
-            patientListContainer.html(patientListHtml).slideDown();
+            patientListContainer.html(patientListHtml).fadeIn();
         });
     });
 

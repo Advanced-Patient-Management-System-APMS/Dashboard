@@ -16,7 +16,7 @@
         height: 350px;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         z-index: 1;
         position: relative;
@@ -28,7 +28,7 @@
     }
 
     .room-box .room-name {
-        font-size: 1.5em;
+        font-size: 2.5em;
         font-weight: 700;
         color: #f8f9fa;
     }
@@ -71,15 +71,22 @@
     .rooms-container.zoomed-in::before { opacity: 1; pointer-events: auto; }
 
     /* 환자 목록 컨테이너 */
-    /* 환자 개별 정보 박스 스타일 */
+    /* ▼▼▼ [수정] 환자 목록 컨테이너 스타일 ▼▼▼ */
+    .patient-list-container {
+        width: 100%; /* 부모 너비를 꽉 채움 */
+        padding: 20px; margin-top: 20px;
+        border-top: 1px solid #6c757d;
+        display: flex; flex-direction: column; gap: 15px;
+        text-align: left;
+    }
+
+    /* ▼▼▼ [수정] 환자 개별 정보 박스 스타일 ▼▼▼ */
     .patient-card {
-        background-color: #6c757d; /* 연한 녹색 배경 */
-        border-radius: 15px; /* 둥근 모서리 */
-        padding: 15px 20px;
-        display: flex; /* 내부 요소(이름, 상세정보)를 가로로 정렬 */
-        align-items: center; /* 세로 중앙 정렬 */
+        background-color: #6c757d; border-radius: 15px;
+        padding: 15px 20px; display: flex; align-items: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        color: #f8f9fa; /* 글자색 */
+        color: #f8f9fa;
+        width: 100%; /* 너비를 100%로 꽉 채움 */
     }
 
     /* 환자 이름 영역 */
@@ -125,7 +132,7 @@
     <div class="row g-4">
         {% for room in top_row_rooms %}
         <div class="col-12 col-md-3">
-            <div class="room-box" data-room="{{ room.name }}">
+            <div class="room-box" data-room="{{ room.name } }">
                 <div class="room-name">{{ room.name }}</div>
                 <div class="patient-info">
                     {% if room.patient != "환자 없음" %}
