@@ -14,6 +14,8 @@
             background-color: #212529;
             font-family: 'Noto Sans KR', sans-serif;
             color: #f8f9fa; /* 기본 글자색을 밝게 */
+            /* ▼▼▼ [추가] 가로 스크롤 방지 ▼▼▼ */
+            overflow-x: hidden; 
         }
 
         #realtime-clock {
@@ -35,13 +37,28 @@
             height: 100vh;
             margin: 0;
             max-width: none;
+            transition: margin-left 0.4s cubic-bezier(0.25,0.8,0.25,1); /* [추가] 애니메이션 적용 */
+        }
+        /* ▼▼▼ [추가] 메뉴가 열렸을 때 컨테이너 밀기 ▼▼▼ */
+        .tab-layout-container.menu-open {
+            margin-left: 200px; /* 메뉴 너비만큼 오른쪽으로 밀어냄 */
+        }
+        .slide-menu {
+            position: fixed; top: 0; left: 0;
+            width: 200px; height: 100vh;
+            background: #343a40;
+            z-index: 1200;
+            box-shadow: 2px 0 24px rgba(0,0,0,0.17);
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1);
+        }
+        .slide-menu.open {
+            transform: translateX(0);
         }
 
         #bookmark-tabs {
-            padding-top: 60px;
-            background-color: #343a40;
-            z-index: 2;
-            flex-shrink: 0;
+            width: 200px;
+            height: 100vh;
         }
         #bookmark-tabs .floor-btn {
             display: block;
@@ -88,19 +105,45 @@
             font-weight: 700;
             color: #f8f9fa;
         }
+        /* style 태그 안의 #menu-toggle-btn 스타일 전체 수정 */
+        #menu-toggle-btn {
+            /* ▼▼▼ [수정] absolute로 변경하여 slide-menu에 종속되도록 함 ▼▼▼ */
+            position: absolute; 
+            
+            /* ▼▼▼ [수정] slide-menu의 오른쪽 경계선에 위치 ▼▼▼ */
+            right: -55px; /* 메뉴 폭(200px)에 버튼 폭을 고려하여 조정 (예: 200 - 145 = 55) */
+            top: 50%; 
+            transform: translateY(-50%);
+            
+            z-index: 1300; 
+            background:#0d6efd; 
+            color:#fff; 
+            border:none;
+            border-radius: 0 1em 1em 0; 
+            padding:16px 12px; 
+            font-size:1.5em; 
+            cursor:pointer;
+            /* 슬라이드 효과는 이미 slide-menu에 있으므로 필요 없음 */
+        }
+
     </style>
 </head>
 <body>
 
 <!-- ▼▼▼ [수정] 로고 img 태그 삭제, 시계 div 추가 ▼▼▼ -->
 <div id="realtime-clock"></div>
-
-<div class="tab-layout-container">
+<div id="slide-menu" class="slide-menu">
+    <button id="menu-toggle-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+    
     <div id="bookmark-tabs">
         <div class="floor-btn active" data-floor="1">1층</div>
         <div class="floor-btn" data-floor="2">2층</div>
         <div class="floor-btn" data-floor="3">3층</div>
     </div>
+</div>
+<div class="tab-layout-container">
     <div id="main-content-box">
         <!-- ▼▼▼ [수정] 메인 제목 추가 ▼▼▼ -->
         <h1 class="main-title">병실 환자 현황</h1>
@@ -146,19 +189,52 @@ $(function() {
     // 1. 페이지 첫 로드 시 1층 정보 불러오기
     updateContent(1);
 
-    // 2. 책갈피 탭 클릭 이벤트 (중복 제거 후 하나만 남김)
+    // 책갈피 탭 클릭 이벤트 유지 (문제 없음)
     $('#bookmark-tabs').on('click', '.floor-btn', function() {
         $('#bookmark-tabs .floor-btn').removeClass('active');
         $(this).addClass('active');
         var floor = $(this).data('floor');
         updateContent(floor);
 
-        // 다른 층으로 이동 시, 확대된 방과 환자 목록 초기화
-        // JavaScript가 찾는 부모 컨테이너 클래스 이름 확인 (.floor-plan-grid 또는 .rooms-container)
+        // 확대/선택 초기화
         $('#rooms-area').find('.zoomed-in').removeClass('zoomed-in');
         $('#rooms-area').find('.selected').removeClass('selected');
         $('#patient-list-area').slideUp();
     });
+
+    $(function(){
+        // 메뉴 토글 버튼 ID와 일치시킴
+        $('#menu-toggle-btn').on('click', function(e) {
+            e.stopPropagation();
+            $('#slide-menu').toggleClass('open');
+            // ▼▼▼ [추가] 컨테이너에 클래스 토글 ▼▼▼
+            $('.tab-layout-container').toggleClass('menu-open'); 
+            
+            // 아이콘 변경 (선택 사항)
+            var icon = $(this).find('i');
+            if ($('#slide-menu').hasClass('open')) {
+                icon.removeClass('fa-bars').addClass('fa-times'); // X 아이콘
+            } else {
+                icon.removeClass('fa-times').addClass('fa-bars'); // 메뉴 아이콘
+            }
+        });
+
+        $(document).on('click', function(e) {
+            if ($('#slide-menu').hasClass('open')) {
+                if (!$(e.target).closest('#slide-menu, #menu-toggle-btn').length) {
+                    $('#slide-menu').removeClass('open');
+                    // ▼▼▼ [추가] 컨테이너 클래스 제거 ▼▼▼
+                    $('.tab-layout-container').removeClass('menu-open');
+                    
+                    // 아이콘 복원
+                    $('#menu-toggle-btn').find('i').removeClass('fa-times').addClass('fa-bars');
+                }
+            }
+        });
+
+    });
+
+
 
     // ▼▼▼ [수정] 방 클릭 이벤트를 아래 로직으로 완전히 교체 ▼▼▼
     $(document).on('click', '.room-box', function() {
