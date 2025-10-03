@@ -55,9 +55,10 @@
         pointer-events: auto;
         justify-content: flex-start;
         padding: 40px;
+        overflow-y: auto;
     }
     .rooms-container.zoomed-in .room-box.selected .patient-info {
-        display: none;
+        /* display: none; <-- 이 줄을 삭제하거나 주석 처리합니다. */
     }
     
     /* 어두운 배경 오버레이 */
@@ -87,25 +88,27 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         color: #f8f9fa;
         width: 100%; /* 너비를 100%로 꽉 채움 */
+        height: 150px;
     }
 
     /* 환자 이름 영역 */
     .patient-card .patient-name-box {
         background-color: #adb5bd; /* 이름 박스 배경 */
-        border-radius: 10px;
+        border-radius: 20px;
         padding: 8px 15px;
         margin-right: 20px;
-        font-size: 1.1em;
+        font-size: 2.5em;
         font-weight: 700;
         color: #212529; /* 이름 글자색 */
         min-width: 100px; /* 이름 박스 최소 너비 */
         text-align: center;
+        align-items: center;
     }
 
     /* 환자 상세 정보 영역 */
     .patient-card .patient-details {
-        font-size: 1.1em;
-        font-weight: 500;
+        font-size: 1.6em;
+        font-weight: 700;
         color: #e9ecef; /* 상세 정보 글자색 */
     }
 
@@ -132,7 +135,7 @@
     <div class="row g-4">
         {% for room in top_row_rooms %}
         <div class="col-12 col-md-3">
-            <div class="room-box" data-room="{{ room.name } }">
+            <div class="room-box" data-room="{{ room.name }}">
                 <div class="room-name">{{ room.name }}</div>
                 <div class="patient-info">
                     {% if room.patient != "환자 없음" %}

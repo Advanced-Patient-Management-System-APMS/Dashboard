@@ -9,41 +9,21 @@
     
     <style>
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: #212529;
             font-family: 'Noto Sans KR', sans-serif;
-            color: #f8f9fa; /* 기본 글자색을 밝게 */
-            /* ▼▼▼ [추가] 가로 스크롤 방지 ▼▼▼ */
+            color: #f8f9fa;
             overflow-x: hidden; 
         }
 
-        #realtime-clock {
-            position: fixed;
-            top: 25px;
-            right: 30px;
-            font-size: 1.1em;
-            font-weight: 500;
-            color: #e9ecef; /* 밝은 글자색 */
-            background-color: rgba(73, 80, 87, 0.8); /* 반투명 어두운 배경 */
-            padding: 8px 15px;
-            border-radius: 8px;
-            z-index: 1000;
-        }
+        /* --- 상단 고정 요소 --- */
+        #realtime-clock { position: fixed; top: 25px; right: 30px; font-size: 1.1em; font-weight: 500; color: #e9ecef; background-color: rgba(73, 80, 87, 0.8); padding: 8px 15px; border-radius: 8px; z-index: 1301; }
+        #user-welcome { position: fixed; top: 65px; right: 30px; color: #adb5bd; font-size: 1.1em; z-index: 1301; text-align: right; font-weight: 500; }
+        .logout-link { color: #ced4da; text-decoration: underline; font-size: 0.9em; margin-left: 8px; }
+        .logout-link:hover { color: white; }
 
-        .tab-layout-container {
-            display: flex;
-            width: 100vw;
-            height: 100vh;
-            margin: 0;
-            max-width: none;
-            transition: margin-left 0.4s cubic-bezier(0.25,0.8,0.25,1); /* [추가] 애니메이션 적용 */
-        }
-        /* ▼▼▼ [추가] 메뉴가 열렸을 때 컨테이너 밀기 ▼▼▼ */
-        .tab-layout-container.menu-open {
-            margin-left: 200px; /* 메뉴 너비만큼 오른쪽으로 밀어냄 */
-        }
-        .slide-menu {
+        /* --- 슬라이드 메뉴 --- */
+        #slide-menu {
             position: fixed; top: 0; left: 0;
             width: 200px; height: 100vh;
             background: #343a40;
@@ -52,69 +32,16 @@
             transform: translateX(-100%);
             transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1);
         }
-        .slide-menu.open {
-            transform: translateX(0);
-        }
-
-        #bookmark-tabs {
-            width: 200px;
-            height: 100vh;
-        }
-        #bookmark-tabs .floor-btn {
-            display: block;
-            min-width: 150px;
-            padding: 15px 25px;
-            text-align: center;
-            font-size: 1.1em;
-            font-weight: 500;
-            border: none;
-            border-bottom: 1px solid #495057;
-            background-color: transparent;
-            color: #adb5bd;
-            border-radius: 0;
-            transition: all 0.2s ease-in-out;
-            cursor: pointer;
-        }
-        #bookmark-tabs .floor-btn.active,
-        #bookmark-tabs .floor-btn:hover {
-            background-color: #0d6efd;
-            color: white;
-        }
+        #slide-menu.open { transform: translateX(0); }
+        #bookmark-tabs .floor-btn { display: block; width: 100%; padding: 15px 25px; text-align: center; font-size: 1.1em; font-weight: 500; border: none; border-bottom: 1px solid #495057; background-color: transparent; color: #adb5bd; transition: all 0.2s ease-in-out; cursor: pointer; }
+        #bookmark-tabs .floor-btn.active, #bookmark-tabs .floor-btn:hover { background-color: #0d6efd; color: white; }
         
-        #main-content-box {
-            flex-grow: 1;
-            background-color: #212529;
-            padding: 30px;
-            overflow-y: auto;
-            z-index: 1;
-        }
-
-        .main-title {
-            font-size: 2.2em;
-            font-weight: 700;
-            color: #f8f9fa; /* 밝은 글자색 */
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        #current-floor-title {
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #495057;
-            font-size: 1.8em;
-            font-weight: 700;
-            color: #f8f9fa;
-        }
-        /* style 태그 안의 #menu-toggle-btn 스타일 전체 수정 */
+        /* --- 메뉴 토글 버튼 --- */
         #menu-toggle-btn {
-            /* ▼▼▼ [수정] absolute로 변경하여 slide-menu에 종속되도록 함 ▼▼▼ */
-            position: absolute; 
-            
-            /* ▼▼▼ [수정] slide-menu의 오른쪽 경계선에 위치 ▼▼▼ */
-            right: -55px; /* 메뉴 폭(200px)에 버튼 폭을 고려하여 조정 (예: 200 - 145 = 55) */
+            position: fixed; /* [수정] fixed로 변경 */
+            left: 20px; /* 기본 위치 */
             top: 50%; 
             transform: translateY(-50%);
-            
             z-index: 1300; 
             background:#0d6efd; 
             color:#fff; 
@@ -123,79 +50,59 @@
             padding:16px 12px; 
             font-size:1.5em; 
             cursor:pointer;
-            /* 슬라이드 효과는 이미 slide-menu에 있으므로 필요 없음 */
+            transition: left 0.4s cubic-bezier(0.25,0.8,0.25,1); /* 부드러운 이동 효과 */
+        }
+        /* 메뉴가 열렸을 때 버튼 위치 이동 */
+        #slide-menu.open + #menu-toggle-btn {
+            left: 200px;
         }
 
-        /* ▼▼▼ [추가] 사용자 환영 메시지 스타일 ▼▼▼ */
-        #user-welcome {
-            position: fixed;
-            top: 65px;      /* 시계(top: 25px)보다 아래에 위치 */
-            right: 30px;
-            color: #adb5bd; /* 약간 밝은 회색 글자 */
-            font-size: 1.1em;
-            z-index: 1000;
-            text-align: right; /* 오른쪽 정렬 */
-            font-weight: 500;
+        /* ▼▼▼ [핵심 수정] 메인 콘텐츠 영역 스타일 ▼▼▼ */
+        #main-content-box {
+            padding: 30px;
+            transition: margin-left 0.4s cubic-bezier(0.25,0.8,0.25,1);
+        }
+        /* 메뉴가 열렸을 때 메인 콘텐츠를 오른쪽으로 밀어냄 */
+        #slide-menu.open ~ #main-content-box {
+            margin-left: 200px;
         }
 
-        /* ▼▼▼ [추가] 로그아웃 링크 스타일 ▼▼▼ */
-        .logout-link {
-            color: #ced4da;
-            text-decoration: underline;
-            font-size: 0.9em;
-            margin-left: 8px;
-        }
-        .logout-link:hover {
-            color: white;
-        }
-
+        .main-title { font-size: 2.2em; font-weight: 700; color: #f8f9fa; margin-bottom: 20px; text-align: center; }
+        #current-floor-title { padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid #495057; font-size: 1.8em; font-weight: 700; color: #f8f9fa; }
     </style>
 </head>
 <body>
 
-<!-- ▼▼▼ [수정] 로고 img 태그 삭제, 시계 div 추가 ▼▼▼ -->
-<div id="realtime-clock"></div>
-
-    {% if full_name %}
-    <div id="user-welcome">
-        {{ full_name }}님, 환영합니다.
-        <a href="{{ url_for('logout') }}" class="logout-link">(로그아웃)</a>
-    </div>
-    {% endif %}
-
-<div id="slide-menu" class="slide-menu">
-    <button id="menu-toggle-btn">
-        <i class="fas fa-bars"></i>
-    </button>
-    
+<!-- ▼▼▼ [구조 수정] 슬라이드 메뉴와 토글 버튼 ▼▼▼ -->
+<div id="slide-menu">
     <div id="bookmark-tabs">
+        <h4 style="padding: 15px 25px;">층별 현황</h4>
         <div class="floor-btn active" data-floor="1">1층</div>
         <div class="floor-btn" data-floor="2">2층</div>
         <div class="floor-btn" data-floor="3">3층</div>
+        <hr style="margin: 20px 25px; border-color: #495057;">
+        <a href="{{ url_for('register_patient') }}" class="floor-btn" style="text-decoration: none;">
+            <i class="fas fa-user-plus"></i> &nbsp; 환자 등록
+        </a>
     </div>
 </div>
-<div class="tab-layout-container">
-    <div id="main-content-box">
-        <!-- ▼▼▼ [수정] 메인 제목 추가 ▼▼▼ -->
-        <h1 class="main-title">병실 환자 현황</h1>
+<button id="menu-toggle-btn"><i class="fas fa-bars"></i></button>
 
-        <div id="floor-view">
-            <div id="current-floor-title"></div>
-            <div id="rooms-area"></div>
-        </div>
-        <div id="beds-area" style="display: none;"></div>
+<!-- ▼▼▼ [구조 수정] 불필요한 div 제거 및 id 변경 ▼▼▼ -->
+<div id="main-content-box">
+    <h1 class="main-title">병실 환자 현황</h1>
+    <div id="floor-view">
+        <div id="current-floor-title"></div>
+        <div id="rooms-area"></div>
     </div>
+    <div id="beds-area" style="display: none;"></div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ▼▼▼ [최종] 모든 기능이 통합된 JavaScript 코드 ▼▼▼
+// ▼▼▼ [최종] 슬라이드 메뉴 기능이 통합된 JavaScript 코드 ▼▼▼
 $(function() {
-    
-    // --- 함수 정의 ---
-    
-    // 실시간 시계 기능
     function updateClock() {
         const now = new Date();
         const year = now.getFullYear();
@@ -208,7 +115,6 @@ $(function() {
         $('#realtime-clock').text(timeString);
     }
 
-    // 층 정보 업데이트 함수
     function updateContent(floor) {
         $('#current-floor-title').text(floor + '층 병동');
         $.get('/api/floor_rooms/' + floor, function(html) {
@@ -216,94 +122,72 @@ $(function() {
         });
     }
 
-    // --- 초기 실행 ---
-
     setInterval(updateClock, 1000);
     updateClock();
-    updateContent(1); // 페이지 첫 로드 시 1층 정보 불러오기
+    updateContent(1);
 
-    // --- 이벤트 핸들러 ---
-
-    // 1. 층 탭(사이드바) 클릭 이벤트
+    // 1. 층 탭(슬라이드 메뉴 안) 클릭 이벤트
     $('#bookmark-tabs').on('click', '.floor-btn', function() {
         $('#bookmark-tabs .floor-btn').removeClass('active');
         $(this).addClass('active');
         var floor = $(this).data('floor');
         updateContent(floor);
-
-        // 다른 층으로 이동 시 확대된 방 초기화
+        // 확대된 방 초기화
         $('#rooms-area .rooms-container').removeClass('zoomed-in');
         $('#rooms-area .room-box').removeClass('selected');
         $('#patient-list-area').slideUp();
     });
 
-    // ▼▼▼ [수정] 방 클릭 이벤트를 아래 로직으로 완전히 교체 ▼▼▼
-    // 2. 방 클릭 이벤트 (환자 목록 HTML 생성 로직 수정)
+    // 2. 방 클릭 이벤트 (이전과 동일)
     $(document).on('click', '.room-box', function(e) {
         e.stopPropagation();
         var roomBox = $(this);
         var roomName = roomBox.data('room');
         var container = roomBox.closest('.rooms-container');
-
         if (roomBox.hasClass('selected')) return;
-
         container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
         roomBox.addClass('selected');
         container.addClass('zoomed-in');
-        
         $.get('/api/patients_in_room/' + roomName, function(patients) {
             roomBox.append('<div class="patient-list-container"></div>');
             var patientListContainer = roomBox.find('.patient-list-container');
-
-            // ▼▼▼ [최종 수정] 스크린샷 디자인에 맞는 HTML 생성 로직 ▼▼▼
             var patientListHtml = `<h4 class="mb-3">${roomName} 환자 현황</h4>`;
-
             if (patients && patients.length > 0) {
                 patients.forEach(function(p) {
                     var patientName = p.patient_name || p['patient name'];
                     var bedNumber = p.bed_number || p['bed number'];
-                    
-                    patientListHtml += `
-                        <div class="patient-card">
-                            <div class="patient-name-box">${patientName}</div>
-                            <div class="patient-details">
-                                ${p.age}세 / ${p.gender} / ${bedNumber}번 침대
-                            </div>
-                        </div>`;
+                    patientListHtml += `<div class="patient-card"><div class="patient-name-box">${patientName}</div><div class="patient-details">${p.age}세 / ${p.gender} / ${bedNumber}번 침대</div></div>`;
                 });
             } else {
                 patientListHtml += '<p class="text-muted">현재 입원한 환자가 없습니다.</p>';
             }
-
             patientListContainer.html(patientListHtml).fadeIn();
         });
     });
-
-    // ▼▼▼ [수정] 배경 클릭 시, 박스 안의 환자 목록 컨테이너도 함께 제거 ▼▼▼
+    
+    // 3. 배경 클릭 시 축소 이벤트 (이전과 동일)
     $(document).on('click', function(e) {
-        var container = $('.rooms-container.zoomed-in, .floor-plan-grid.zoomed-in');
+        var container = $('.rooms-container.zoomed-in');
         if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
             container.removeClass('zoomed-in');
-            // 선택 해제 시, 박스 안에 동적으로 생성했던 환자 목록 컨테이너를 삭제
             container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
         }
     });
-    
+
     // 4. 슬라이드 메뉴 토글 이벤트
     $('#menu-toggle-btn').on('click', function(e) {
         e.stopPropagation();
         $('#slide-menu').toggleClass('open');
-        $('.tab-layout-container').toggleClass('menu-open');
     });
 
     // 5. 메뉴 바깥쪽 클릭 시 메뉴 닫기 이벤트
     $(document).on('click', function(e) {
         if ($('#slide-menu').hasClass('open') && !$(e.target).closest('#slide-menu').length && !$(e.target).is('#menu-toggle-btn')) {
             $('#slide-menu').removeClass('open');
-            $('.tab-layout-container').removeClass('menu-open');
         }
     });
 });
 </script>
+
 </body>
 </html>
