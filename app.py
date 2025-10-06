@@ -127,33 +127,49 @@ def api_floor_rooms(floor_num):
     try:
         cur = mysql.connection.cursor()
         
+        # ▼▼▼ [핵심 수정] JOIN을 사용하여 해당 층의 모든 방과 환자 정보를 한번에 가져옵니다. ▼▼▼
         query = """
             SELECT 
                 r.room_number,
-                (SELECT p.patient_name FROM patients p JOIN beds b ON p.bed_id = b.bed_id WHERE b.room_id = r.room_id LIMIT 1) as patient_name
+                p.patient_name, p.age, p.gender, b.bed_number
             FROM rooms r
+            LEFT JOIN beds b ON r.room_id = b.room_id
+            LEFT JOIN patients p ON b.bed_id = p.bed_id
             WHERE r.floor = %s
-            ORDER BY r.room_number ASC
+            ORDER BY r.room_number, b.bed_number
         """
         cur.execute(query, [floor_num])
-        all_rooms = cur.fetchall()
+        results = cur.fetchall()
         cur.close()
 
-        rooms_data = []
-        for room in all_rooms:
-            rooms_data.append({
-                'name': f"{room['room_number']}호",
-                'patient': room['patient_name'] if room['patient_name'] else "환자 없음"
-            })
+        # 조회된 데이터를 방별로 그룹화합니다.
+        rooms_dict = {}
+        # 8개 방을 먼저 빈 상태로 초기화합니다.
+        for i in range(1, 9):
+            room_name_with_unit = f"{floor_num}0{i}호"
+            rooms_dict[room_name_with_unit] = {'name': room_name_with_unit, 'patients': []}
+
+        # DB에서 가져온 환자 정보를 해당 방에 추가합니다.
+        for row in results:
+            room_name_with_unit = f"{row['room_number']}호"
+            if row['patient_name']:
+                rooms_dict[room_name_with_unit]['patients'].append(row)
         
+        # 템플릿에 전달할 최종 데이터 생성
+        rooms_data = list(rooms_dict.values())
         top_row_rooms = rooms_data[0:4]
         bottom_row_rooms = rooms_data[4:8]
 
-        return render_template('floor_rooms.html', top_row_rooms=top_row_rooms, bottom_row_rooms=bottom_row_rooms)
+        return render_template(
+            'floor_rooms.html', 
+            top_row_rooms=top_row_rooms, 
+            bottom_row_rooms=bottom_row_rooms
+        )
 
     except Exception as e:
         print(f"Error fetching floor data: {e}")
         return "데이터 조회 중 오류 발생", 500
+
 
 @app.route('/api/patients_in_room/<room_name>')
 def api_patients_in_room(room_name):

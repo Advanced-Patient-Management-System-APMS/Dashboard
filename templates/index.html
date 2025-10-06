@@ -146,41 +146,57 @@ $(function() {
         $('#patient-list-area').slideUp();
     });
 
-    // 2. 방 클릭 이벤트 (이전과 동일)
-    $(document).on('click', '.room-box', function(e) {
-        e.stopPropagation();
-        var roomBox = $(this);
-        var roomName = roomBox.data('room');
-        var container = roomBox.closest('.rooms-container');
-        if (roomBox.hasClass('selected')) return;
-        container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
-        roomBox.addClass('selected');
-        container.addClass('zoomed-in');
-        $.get('/api/patients_in_room/' + roomName, function(patients) {
-            roomBox.append('<div class="patient-list-container"></div>');
-            var patientListContainer = roomBox.find('.patient-list-container');
-            var patientListHtml = `<h4 class="mb-3">${roomName} 환자 현황</h4>`;
-            if (patients && patients.length > 0) {
-                patients.forEach(function(p) {
-                    var patientName = p.patient_name || p['patient name'];
-                    var bedNumber = p.bed_number || p['bed number'];
-                    patientListHtml += `<div class="patient-card"><div class="patient-name-box">${patientName}</div><div class="patient-details">${p.age}세 / ${p.gender} / ${bedNumber}번 침대</div></div>`;
-                });
-            } else {
-                patientListHtml += '<p class="text-muted">현재 입원한 환자가 없습니다.</p>';
-            }
-            patientListContainer.html(patientListHtml).fadeIn();
-        });
-    });
+ // 2. 방 클릭 이벤트 (최종 수정)
+$(document).on('click', '.room-box', function(e) {
+    e.stopPropagation();
+    var roomBox = $(this);
+    var roomName = roomBox.data('room');
+    var container = roomBox.closest('.rooms-container');
+
+    if (roomBox.hasClass('selected')) return;
+
+    // 다른 방이 선택되어 있었다면 먼저 초기화
+    container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
     
-    // 3. 배경 클릭 시 축소 이벤트 (이전과 동일)
-    $(document).on('click', function(e) {
-        var container = $('.rooms-container.zoomed-in');
-        if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
-            container.removeClass('zoomed-in');
-            container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
-        }
-    });
+    // 현재 방 선택 및 확대
+    roomBox.addClass('selected');
+    container.addClass('zoomed-in');
+    
+    // ▼▼▼ [핵심] API 호출 대신, data-patients 속성에서 데이터를 읽어옴 ▼▼▼
+    var patients = roomBox.data('patients');
+
+    // 상세 목록을 담을 컨테이너를 동적으로 생성
+    roomBox.append('<div class="patient-list-container"></div>');
+    var patientListContainer = roomBox.find('.patient-list-container');
+
+    // ▼▼▼ [핵심] 상세 목록 디자인 HTML 생성 로직 (유지) ▼▼▼
+    var patientListHtml = `<div class="patient-card" style="background-color: #ced4da;"><h4 style="width: 100%; text-align: center; color: #212529;">${roomName}</h4></div>`;
+
+    if (patients && patients.length > 0) {
+        patients.forEach(function(p) {
+            patientListHtml += `
+                <div class="patient-card">
+                    <div class="patient-name-box">${p.patient_name}</div>
+                    <div class="patient-details">${p.age}세 / ${p.gender} / ${p.bed_number}번 침대</div>
+                </div>`;
+        });
+    } else {
+        patientListHtml += '<p class="text-white text-center mt-3">현재 입원한 환자가 없습니다.</p>';
+    }
+
+    // 생성된 HTML을 컨테이너에 넣고 부드럽게 표시
+    patientListContainer.html(patientListHtml).fadeIn();
+});
+
+// 3. 배경 클릭 시 축소 이벤트
+$(document).on('click', function(e) {
+    var container = $('.rooms-container.zoomed-in');
+    if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
+        container.removeClass('zoomed-in');
+        // 축소 시, 동적으로 생성했던 상세 목록 컨테이너를 삭제
+        container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
+    }
+});
 
     // 4. 슬라이드 메뉴 토글 이벤트
     $('#menu-toggle-btn').on('click', function(e) {

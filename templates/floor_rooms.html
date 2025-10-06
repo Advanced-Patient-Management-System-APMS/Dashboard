@@ -1,46 +1,23 @@
 <style>
-    /* ▼▼▼ [핵심] 방 관련 스타일을 이 파일에 추가합니다. ▼▼▼ */
-    .rooms-container {
-        position: relative; /* 오버레이의 기준점이 됨 */
-    }
-
+    /* 방 박스 기본 스타일 */
+    /* 방 박스 기본 스타일 */
     .room-box {
-        background-color: #495057;
-        border: 1px solid #6c757d;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-        width: 100%;
-        height: 350px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        align-items: center;
-        z-index: 1;
-        position: relative;
+        background-color: #343a40; border: 1px solid #495057; border-radius: 12px;
+        padding: 20px; cursor: pointer; width: 100%; height: 350px;
+        display: flex; flex-direction: column; transition: all 0.4s ease;
+        position: relative; z-index: 1; overflow: hidden; /* 미리보기를 위해 넘치는 내용 숨김 */
     }
-
-    .room-box:hover {
-        transform: translateY(-5px);
-        border-color: #0d6efd;
-    }
-
-    .room-box .room-name {
-        font-size: 2.5em;
-        font-weight: 700;
-        color: #f8f9fa;
-    }
-    .room-box .patient-info {
-        font-size: 0.9em;
-        color: #ced4da;
-        margin-top: 10px;
-    }
-    .patient-info .status-occupied { color: #ffc107; }
-    .patient-info .status-vacant { color: #20c997; }
-
+    .room-name { font-size: 1.5em; font-weight: 700; color: #f8f9fa; margin-bottom: 15px; text-align: center; flex-shrink: 0; }
+    .room-box:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1); }
+    
+    /* ▼▼▼ [추가] 미리보기 환자 목록 스타일 ▼▼▼ */
+    .patient-preview-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow: hidden; width: 100%; }
+    .preview-item { background-color: #495057; border-radius: 8px; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9em; text-align: center; }
+    .preview-item i { font-size: 1.8em; margin-bottom: 8px; color: #ced4da; }
+    .preview-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: #f8f9fa; }
+    
     /* --- 확대 애니메이션 스타일 --- */
+    .rooms-container { position: relative; }
     .rooms-container.zoomed-in .room-box {
         opacity: 0.1;
         pointer-events: none;
@@ -48,86 +25,77 @@
     .rooms-container.zoomed-in .room-box.selected {
         opacity: 1;
         position: fixed;
-        top: 50%; left: 50%;
+        top: 50%;
+        left: 50%;
         transform: translate(-50%, -50%);
-        width: 60vw; height: 75vh;
+        width: 50vw;
+        max-width: 600px;
+        height: 75vh;
         z-index: 100;
         pointer-events: auto;
+        padding: 30px;
+        align-items: center;
         justify-content: flex-start;
-        padding: 40px;
-        overflow-y: auto;
+        background-color: #4a545e; /* 스크린샷의 어두운 녹색 계열 배경 */
     }
-    .rooms-container.zoomed-in .room-box.selected .patient-info {
-        /* display: none; <-- 이 줄을 삭제하거나 주석 처리합니다. */
+    /* 확대 시 기존 방 이름 숨기기 */
+    .rooms-container.zoomed-in .room-box.selected .room-name {
+        display: none;
+    }
+    /* ▼▼▼ [핵심] 이 부분을 추가하세요. ▼▼▼ */
+    .rooms-container.zoomed-in .room-box.selected .patient-preview-list {
+        display: none; /* 확대 시 기존 미리보기 목록을 숨김 */
     }
     
     /* 어두운 배경 오버레이 */
     .rooms-container::before {
-        content: ''; position: fixed; top: 0; left: 0;
-        width: 100vw; height: 100vh;
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
         background-color: rgba(0, 0, 0, 0.8);
-        opacity: 0; pointer-events: none;
-        transition: opacity 0.4s ease; z-index: 50;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s ease;
+        z-index: 50;
     }
-    .rooms-container.zoomed-in::before { opacity: 1; pointer-events: auto; }
+    .rooms-container.zoomed-in::before {
+        opacity: 1;
+        pointer-events: auto;
+    }
 
-    /* 환자 목록 컨테이너 */
-    /* ▼▼▼ [수정] 환자 목록 컨테이너 스타일 ▼▼▼ */
+    /* ▼▼▼ [스크린샷 디자인] 환자 목록 스타일 ▼▼▼ */
     .patient-list-container {
-        width: 100%; /* 부모 너비를 꽉 채움 */
-        padding: 20px; margin-top: 20px;
-        border-top: 1px solid #6c757d;
-        display: flex; flex-direction: column; gap: 15px;
-        text-align: left;
+        width: 100%;
+        height: 100%;
+        display: none; /* JavaScript로 제어 */
+        flex-direction: column;
+        gap: 15px; /* 각 환자 카드 사이의 간격 */
+        overflow-y: auto; /* 내용이 넘치면 스크롤 */
+        padding-right: 10px; /* 스크롤바 공간 확보 */
     }
-
-    /* ▼▼▼ [수정] 환자 개별 정보 박스 스타일 ▼▼▼ */
     .patient-card {
-        background-color: #6c757d; border-radius: 15px;
-        padding: 15px 20px; display: flex; align-items: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        color: #f8f9fa;
-        width: 100%; /* 너비를 100%로 꽉 채움 */
-        height: 150px;
-    }
-
-    /* 환자 이름 영역 */
-    .patient-card .patient-name-box {
-        background-color: #adb5bd; /* 이름 박스 배경 */
-        border-radius: 20px;
-        padding: 8px 15px;
-        margin-right: 20px;
-        font-size: 2.5em;
-        font-weight: 700;
-        color: #212529; /* 이름 글자색 */
-        min-width: 100px; /* 이름 박스 최소 너비 */
-        text-align: center;
+        background-color: #e9ecef;
+        border-radius: 15px;
+        padding: 10px;
+        display: flex;
         align-items: center;
+        color: #212529;
+        flex-shrink: 0; /* 크기가 줄어들지 않도록 함 */
     }
-
-    /* 환자 상세 정보 영역 */
-    .patient-card .patient-details {
-        font-size: 1.6em;
-        font-weight: 700;
-        color: #e9ecef; /* 상세 정보 글자색 */
-    }
-
-    /* 환자 없음 메시지 */
-    .patient-list-container p.text-muted {
-        text-align: center;
-        color: #adb5bd !important;
-        font-style: italic;
+    .patient-card .patient-name-box {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-right: 20px;
         font-size: 1.1em;
-        margin-top: 20px;
-    }
-
-    /* 확대된 방 박스 안의 제목 스타일 */
-    .room-box.selected h4 {
-        color: #e9ecef; /* 제목 색상 */
-        margin-bottom: 25px; /* 환자 목록과의 간격 */
-        font-size: 1.8em;
         font-weight: 700;
-        text-align: center;
+    }
+    .patient-card .patient-details {
+        font-size: 1.1em;
+        font-weight: 500;
     }
 </style>
 
@@ -135,30 +103,46 @@
     <div class="row g-4">
         {% for room in top_row_rooms %}
         <div class="col-12 col-md-3">
-            <div class="room-box" data-room="{{ room.name }}">
+            <div class="room-box" 
+                 data-room="{{ room.name }}" 
+                 data-patients='{{ room.patients | tojson | safe }}'>
+                
                 <div class="room-name">{{ room.name }}</div>
-                <div class="patient-info">
-                    {% if room.patient != "환자 없음" %}
-                        <span class="status-occupied">{{ room.patient }}</span>
+                
+                <div class="patient-preview-list">
+                    {% if room.patients and room.patients|length > 0 %}
+                        {% for p in room.patients[:4] %} <div class="preview-item">
+                                {% if p.gender == '남' or p.gender == 'male' %}<i class="fas fa-male"></i>{% else %}<i class="fas fa-female"></i>{% endif %}
+                                <span>{{ p.patient_name }}</span>
+                            </div>
+                        {% endfor %}
                     {% else %}
-                        <span class="status-vacant">{{ room.patient }}</span>
+                        <p class="text-muted text-center mt-3">(환자 없음)</p>
                     {% endif %}
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
-
     <div class="row g-4 mt-4">
         {% for room in bottom_row_rooms %}
         <div class="col-12 col-md-3">
-            <div class="room-box" data-room="{{ room.name }}">
+            <div class="room-box" 
+                 data-room="{{ room.name }}" 
+                 data-patients='{{ room.patients | tojson | safe }}'>
+                
                 <div class="room-name">{{ room.name }}</div>
-                <div class="patient-info">
-                    {% if room.patient != "환자 없음" %}
-                        <span class="status-occupied">{{ room.patient }}</span>
+                
+                <div class="patient-preview-list">
+                    {% if room.patients and room.patients|length > 0 %}
+                        {% for p in room.patients[:4] %}
+                            <div class="preview-item">
+                                {% if p.gender == '남' or p.gender == 'male' %}<i class="fas fa-male"></i>{% else %}<i class="fas fa-female"></i>{% endif %}
+                                <span>{{ p.patient_name }}</span>
+                            </div>
+                        {% endfor %}
                     {% else %}
-                        <span class="status-vacant">{{ room.patient }}</span>
+                        <p class="text-muted text-center mt-3">(환자 없음)</p>
                     {% endif %}
                 </div>
             </div>
@@ -166,5 +150,3 @@
         {% endfor %}
     </div>
 </div>
-
-<div id="patient-list-area"></div>
