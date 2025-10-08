@@ -63,11 +63,10 @@ def logout():
 # ▼▼▼ [핵심] 빠져있던 '환자 등록' 기능 전체를 다시 추가합니다. ▼▼▼
 @app.route('/register_patient', methods=['GET', 'POST'])
 def register_patient():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
     if request.method == 'POST':
+        # 폼에서 데이터 가져오기
         patient_name = request.form['patient_name']
+        disease = request.form.get('disease') # [추가] disease 값 가져오기
         age = request.form.get('age')
         gender = request.form['gender']
         bed_id = request.form['bed_id']
@@ -77,16 +76,17 @@ def register_patient():
         else:
             try:
                 cur = mysql.connection.cursor()
+                # ▼▼▼ [수정] INSERT 쿼리에 disease 추가 ▼▼▼
                 cur.execute(
-                    "INSERT INTO patients (patient_name, age, gender, bed_id) VALUES (%s, %s, %s, %s)",
-                    (patient_name, age, gender, bed_id)
+                    "INSERT INTO patients (patient_name, disease, age, gender, bed_id) VALUES (%s, %s, %s, %s, %s)",
+                    (patient_name, disease, age, gender, bed_id)
                 )
                 mysql.connection.commit()
                 cur.close()
                 flash(f"'{patient_name}' 환자 등록이 완료되었습니다.")
                 return redirect(url_for('index'))
             except Exception as e:
-                flash("환자 등록 중 오류가 발생했습니다. 이미 사용 중인 침대일 수 있습니다.")
+                flash("환자 등록 중 오류가 발생했습니다.")
                 print(f"Patient registration error: {e}")
 
     all_rooms = []
