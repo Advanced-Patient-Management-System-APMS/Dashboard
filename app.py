@@ -36,7 +36,6 @@ def login():
         password = request.form['password']
 
         cur = mysql.connection.cursor()
-        # AjouHospital_DB 안에 있는 login_staff 테이블 조회
         query = "SELECT * FROM login_staff WHERE username = %s AND hospital = %s"
         cur.execute(query, (username, hospital_name))
         user = cur.fetchone()
@@ -61,48 +60,65 @@ def logout():
     return redirect(url_for('login'))
 
 
-# ▼▼▼ [핵심] 이 함수 전체를 추가하세요. ▼▼▼
+# ▼▼▼ [핵심] 빠져있던 '환자 등록' 기능 전체를 다시 추가합니다. ▼▼▼
 @app.route('/register_patient', methods=['GET', 'POST'])
 def register_patient():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
     if request.method == 'POST':
         patient_name = request.form['patient_name']
         age = request.form.get('age')
         gender = request.form['gender']
         bed_id = request.form['bed_id']
 
-        try:
-            cur = mysql.connection.cursor()
-            cur.execute(
-                "INSERT INTO patients (patient_name, age, gender, bed_id) VALUES (%s, %s, %s, %s)",
-                (patient_name, age, gender, bed_id)
-            )
-            mysql.connection.commit()
-            cur.close()
-            flash(f"'{patient_name}' 환자 등록이 완료되었습니다.")
-            return redirect(url_for('index'))
-        except Exception as e:
-            flash("환자 등록 중 오류가 발생했습니다. 이미 사용 중인 침대일 수 있습니다.")
-            print(f"Patient registration error: {e}")
+        if not bed_id:
+            flash("침대가 선택되지 않았습니다.")
+        else:
+            try:
+                cur = mysql.connection.cursor()
+                cur.execute(
+                    "INSERT INTO patients (patient_name, age, gender, bed_id) VALUES (%s, %s, %s, %s)",
+                    (patient_name, age, gender, bed_id)
+                )
+                mysql.connection.commit()
+                cur.close()
+                flash(f"'{patient_name}' 환자 등록이 완료되었습니다.")
+                return redirect(url_for('index'))
+            except Exception as e:
+                flash("환자 등록 중 오류가 발생했습니다. 이미 사용 중인 침대일 수 있습니다.")
+                print(f"Patient registration error: {e}")
 
-    # GET 요청: 비어있는 침대 목록을 조회하여 폼에 전달
-    available_beds = []
+    all_rooms = []
     try:
         cur = mysql.connection.cursor()
-        cur.execute("""
-            SELECT b.bed_id, r.room_number, b.bed_number 
-            FROM beds b
-            JOIN rooms r ON b.room_id = r.room_id
-            LEFT JOIN patients p ON b.bed_id = p.bed_id
-            WHERE p.patient_id IS NULL
-            ORDER BY r.room_number, b.bed_number
-        """)
-        available_beds = cur.fetchall()
+        cur.execute("SELECT room_id, room_number, floor FROM rooms ORDER BY floor, room_number")
+        all_rooms = cur.fetchall()
         cur.close()
     except Exception as e:
-        print(f"Error fetching available beds: {e}")
-        flash("비어있는 침대 목록을 불러오는 중 오류가 발생했습니다.")
+        print(f"Error fetching all rooms: {e}")
+        flash("병실 목록을 불러오는 중 오류가 발생했습니다.")
 
-    return render_template('register_patient.html', available_beds=available_beds)
+    return render_template('register_patient.html', all_rooms=all_rooms)
+
+@app.route('/api/available_beds_in_room/<int:room_id>')
+def api_available_beds_in_room(room_id):
+    try:
+        cur = mysql.connection.cursor()
+        query = """
+            SELECT b.bed_id, b.bed_number
+            FROM beds b
+            LEFT JOIN patients p ON b.bed_id = p.bed_id
+            WHERE b.room_id = %s AND p.patient_id IS NULL
+            ORDER BY b.bed_number;
+        """
+        cur.execute(query, [room_id])
+        available_beds = cur.fetchall()
+        cur.close()
+        return jsonify(available_beds)
+    except Exception as e:
+        print(f"Error fetching available beds in room: {e}")
+        return jsonify({'error': '침대 정보 조회 중 오류 발생'}), 500
 
 
 @app.route('/api/floor_rooms/<int:floor_num>')
@@ -110,7 +126,7 @@ def api_floor_rooms(floor_num):
     try:
         cur = mysql.connection.cursor()
         
-        # ▼▼▼ [최종 수정] 환자별 '최신 event_type'을 함께 가져오는 최종 쿼리 ▼▼▼
+        # ▼▼▼ [핵심 수정] 빠져있던 latest_event_type 서브쿼리를 다시 추가합니다. ▼▼▼
         query = """
             SELECT 
                 r.room_number,
@@ -131,14 +147,9 @@ def api_floor_rooms(floor_num):
         results = cur.fetchall()
         cur.close()
 
-        # ▼▼▼ [진단 코드] DB에서 가져온 원본 데이터의 '키'를 직접 확인합니다. ▼▼▼
-        if results:
-            print("\n--- [진단] DB 원본 데이터의 첫 번째 줄 키(key) 목록 ---")
-            print(results[0].keys())
-            print("--------------------------------------------------\n")
-
-        # --- (이하 데이터 그룹화 로직은 그대로 유지) ---
+        # --- (이하 데이터 그룹화 로직은 이전과 동일하게 유지) ---
         rooms_dict = {}
+        # 8개 방을 먼저 빈 상태로 초기화
         for i in range(1, 9):
             room_name_with_unit = f"{floor_num}0{i}호"
             rooms_dict[room_name_with_unit] = {'name': room_name_with_unit, 'patients': []}
@@ -159,7 +170,7 @@ def api_floor_rooms(floor_num):
         )
 
     except Exception as e:
-        print(f"!!! 에러 발생: {e} !!!")
+        print(f"Error fetching floor data: {e}")
         return "데이터 조회 중 오류 발생", 500
 
 @app.route('/api/patients_in_room/<room_name>')
@@ -168,7 +179,6 @@ def api_patients_in_room(room_name):
         cur = mysql.connection.cursor()
         room_number_for_query = room_name.strip('호')
         
-        # JOIN을 사용하여 특정 방의 '모든' 환자 정보를 가져옵니다.
         query = """
             SELECT p.patient_name, p.age, p.gender, b.bed_number 
             FROM patients p
@@ -188,5 +198,4 @@ def api_patients_in_room(room_name):
 # --- 서버 실행 ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
-
 

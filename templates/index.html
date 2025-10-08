@@ -111,6 +111,10 @@
 <script>
 // ▼▼▼ [최종] 슬라이드 메뉴 기능이 통합된 JavaScript 코드 ▼▼▼
 $(function() {
+
+    // --- 상태 변수 ---
+    let currentFloor = 1; // 현재 보고 있는 층을 기억하는 변수
+
     function updateClock() {
         const now = new Date();
         const year = now.getFullYear();
@@ -132,7 +136,15 @@ $(function() {
 
     setInterval(updateClock, 1000);
     updateClock();
-    updateContent(1);
+    updateContent(currentFloor);
+
+
+    // ▼▼▼ [핵심 추가] 5초마다 자동으로 층 정보 업데이트 ▼▼▼
+    setInterval(function() {
+        // 현재 보고 있는 층의 정보를 5초마다 다시 불러옵니다.
+        updateContent(currentFloor);
+        console.log(currentFloor + "층 정보를 자동으로 새로고침합니다."); // (F12 개발자 도구에서 확인 가능)
+    }, 5000); // 5000 밀리초 = 5초
 
     // 1. 층 탭(슬라이드 메뉴 안) 클릭 이벤트
     $('#bookmark-tabs').on('click', '.floor-btn', function() {

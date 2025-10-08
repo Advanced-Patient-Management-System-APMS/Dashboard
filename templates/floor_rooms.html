@@ -7,13 +7,14 @@
         padding: 20px;
         cursor: pointer;
         width: 100%;
-        height: 350px; /* 미리보기 높이 */
+        /* ▼▼▼ [수정] 6명을 표시하기 위해 높이를 늘립니다 ▼▼▼ */
+        height: 350px; 
         display: flex;
         flex-direction: column;
         transition: all 0.4s ease;
         position: relative;
         z-index: 1;
-        overflow: hidden; /* 미리보기를 위해 넘치는 내용 숨김 */
+        overflow: hidden;
     }
     .room-name {
         font-size: 1.5em;
@@ -26,52 +27,54 @@
     .room-box:hover {
         transform: translateY(-5px);
         box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        border-color: #0d6efd;
     }
     
-    /* 미리보기 환자 목록 스타일 */
-     /* ▼▼▼ [수정] 미리보기 환자 목록 스타일 ▼▼▼ */
-     .patient-preview-list {
+    /* --- 미리보기 스타일 (기존 스타일 유지) --- */
+    .patient-preview-list {
         display: grid;
-        grid-template-columns: 1fr 1fr; /* [유지] 2열 그리드는 그대로 둡니다. */
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
         overflow: hidden;
         width: 100%;
     }
-
-    /* ▼▼▼ [수정] 미리보기 아이템 내부를 가로로 정렬 ▼▼▼ */
     .preview-item {
         background-color: #495057;
         border-radius: 8px;
-        padding: 10px 8px; /* 좌우 패딩을 늘려 공간 확보 */
+        padding: 10px 8px;
         display: flex;
-        flex-direction: row; /* [핵심] 세로(column) -> 가로(row)로 변경 */
-        align-items: center; /* 세로 중앙 정렬 */
-        justify-content: flex-start; /* 왼쪽부터 정렬 */
-        font-size: 0.9em;
-        text-align: left; /* 텍스트 왼쪽 정렬 */
-        height: 120px; /* 박스 높이 고정 (선택사항) */
+        align-items: center;
+        height: 75px;
     }
-
-    /* ▼▼▼ [수정] 아이콘 크기 및 간격 조정 ▼▼▼ */
-    .preview-item img,
-    .preview-item i {
-        font-size: 3.1em; /* 아이콘 크기 살짝 줄임 */
+    .preview-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .preview-icon img,
+    .preview-icon i {
         width: 48px;
         height: 48px;
-        margin-bottom: 0; /* 아래쪽 여백 제거 */
-        margin-right: 12px; /* [추가] 이름과의 오른쪽 여백 */
+        font-size: 1.8em;
         color: #ced4da;
-        flex-shrink: 0; /* 아이콘이 찌그러지지 않도록 함 */
     }
-
-    .preview-item span {
+    .separator {
+        width: 7px;
+        height: 100%;
+        background-color: #6c757d;
+        margin: 0 10px;
+    }
+    .preview-name {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
         color: #f8f9fa;
         font-weight: 500;
-        font-size: 2.1em;
+        font-size: 1.7em;
     }
 
     /* --- 확대 애니메이션 스타일 --- */
@@ -163,16 +166,21 @@
                  data-patients='{{ room.patients | tojson | safe }}'>
                 
                 <div class="room-name">{{ room.name }}</div>
+                
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
-                        {% for p in room.patients[:4] %}
+                        <!-- ▼▼▼ [수정] :4 -> :6 으로 변경 ▼▼▼ -->
+                        {% for p in room.patients[:6] %}
                             <div class="preview-item">
-                                <!-- ▼▼▼ [핵심 변경] 최신 이벤트 타입에 따라 아이콘 변경 (직접 저장한 이미지) ▼▼▼ -->{% if p.latest_event_type == 'present' %}
-                                    <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
-                                {% else %}
-                                    <!-- 'present'가 아닐 경우, 아이콘 없이 이름만 표시 --><!-- 성별 아이콘 표시 로직을 제거했습니다. -->{% endif %}
-
-                                <span>{{ p.patient_name }}</span>
+                                <div class="preview-icon">
+                                    {% if p.latest_event_type == 'present' %}
+                                        <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
+                                    {% endif %}
+                                </div>
+                                <div class="separator"></div>
+                                <div class="preview-name">
+                                    <span>{{ p.patient_name }}</span>
+                                </div>
                             </div>
                         {% endfor %}
                     {% else %}
@@ -187,21 +195,26 @@
     <div class="row g-4 mt-4">
         {% for room in bottom_row_rooms %}
         <div class="col-12 col-md-3">
-            <div class="room-box" 
+             <div class="room-box" 
                  data-room="{{ room.name }}" 
                  data-patients='{{ room.patients | tojson | safe }}'>
                 
                 <div class="room-name">{{ room.name }}</div>
+                
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
-                        {% for p in room.patients[:4] %}
+                        <!-- ▼▼▼ [수정] :4 -> :6 으로 변경 ▼▼▼ -->
+                        {% for p in room.patients[:6] %}
                             <div class="preview-item">
-                                <!-- ▼▼▼ [핵심 변경] 최신 이벤트 타입에 따라 아이콘 변경 (직접 저장한 이미지) ▼▼▼ -->{% if p.latest_event_type == 'present' %}
-                                    <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
-                                {% else %}
-                                    <!-- 'present'가 아닐 경우, 아이콘 없이 이름만 표시 --><!-- 성별 아이콘 표시 로직을 제거했습니다. -->{% endif %}
-
-                                <span>{{ p.patient_name }}</span>
+                                <div class="preview-icon">
+                                    {% if p.latest_event_type == 'present' %}
+                                        <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
+                                    {% endif %}
+                                </div>
+                                <div class="separator"></div>
+                                <div class="preview-name">
+                                    <span>{{ p.patient_name }}</span>
+                                </div>
                             </div>
                         {% endfor %}
                     {% else %}
