@@ -106,110 +106,97 @@
     </div>
     <div id="beds-area" style="display: none;"></div>
 </div>
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ▼▼▼ [최종] 슬라이드 메뉴 기능이 통합된 JavaScript 코드 ▼▼▼
+// ▼▼▼ [최종] 중복을 모두 제거한 완전한 JavaScript 코드 ▼▼▼
 $(function() {
-
+    
     // --- 상태 변수 ---
-    let currentFloor = 1; // 현재 보고 있는 층을 기억하는 변수
+    let currentFloor = 1;
+    let isZoomedIn = false;
 
+    // --- 함수 정의 ---
     function updateClock() {
         const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        const timeString = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        const timeString = now.toLocaleString('ko-KR'); // 더 간단한 시간 형식
         $('#realtime-clock').text(timeString);
     }
 
     function updateContent(floor) {
+        currentFloor = floor; // 현재 층 번호 업데이트
         $('#current-floor-title').text(floor + '층 병동');
         $.get('/api/floor_rooms/' + floor, function(html) {
             $('#rooms-area').html(html);
         });
     }
 
+    // --- 초기 실행 ---
     setInterval(updateClock, 1000);
     updateClock();
     updateContent(currentFloor);
 
-
-    // ▼▼▼ [핵심 추가] 5초마다 자동으로 층 정보 업데이트 ▼▼▼
+    // [핵심] 자동 새로고침 로직
     setInterval(function() {
-        // 현재 보고 있는 층의 정보를 5초마다 다시 불러옵니다.
-        updateContent(currentFloor);
-        console.log(currentFloor + "층 정보를 자동으로 새로고침합니다."); // (F12 개발자 도구에서 확인 가능)
-    }, 5000); // 5000 밀리초 = 5초
+        if (!isZoomedIn) { // 확대된 상태가 아닐 때만 실행
+            updateContent(currentFloor);
+        }
+    }, 5000);
 
-    // 1. 층 탭(슬라이드 메뉴 안) 클릭 이벤트
+    // --- 이벤트 핸들러 (중복 제거) ---
+
+    // 1. 층 탭 클릭 이벤트
     $('#bookmark-tabs').on('click', '.floor-btn', function() {
+        isZoomedIn = false; // 층을 바꾸면 확대 상태 해제
         $('#bookmark-tabs .floor-btn').removeClass('active');
         $(this).addClass('active');
         var floor = $(this).data('floor');
-        updateContent(floor);
-        // 확대된 방 초기화
-        $('#rooms-area .rooms-container').removeClass('zoomed-in');
-        $('#rooms-area .room-box').removeClass('selected');
-        $('#patient-list-area').slideUp();
+        if (floor) { // '환자 등록' 버튼은 data-floor가 없으므로 제외
+            updateContent(floor);
+        }
     });
 
- // 2. 방 클릭 이벤트 (최종 수정)
-$(document).on('click', '.room-box', function(e) {
-    e.stopPropagation();
-    var roomBox = $(this);
-    var roomName = roomBox.data('room');
-    var container = roomBox.closest('.rooms-container');
+    // 2. 방 클릭 이벤트
+    $(document).on('click', '.room-box', function(e) {
+        e.stopPropagation();
+        isZoomedIn = true; // 방을 클릭하면 확대 상태로 변경
 
-    if (roomBox.hasClass('selected')) return;
+        var roomBox = $(this);
+        var roomName = roomBox.data('room');
+        var container = roomBox.closest('.rooms-container');
 
-    // 다른 방이 선택되어 있었다면 먼저 초기화
-    container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
-    
-    // 현재 방 선택 및 확대
-    roomBox.addClass('selected');
-    container.addClass('zoomed-in');
-    
-    // ▼▼▼ [핵심] API 호출 대신, data-patients 속성에서 데이터를 읽어옴 ▼▼▼
-    var patients = roomBox.data('patients');
+        if (roomBox.hasClass('selected')) return;
 
-    // 상세 목록을 담을 컨테이너를 동적으로 생성
-    roomBox.append('<div class="patient-list-container"></div>');
-    var patientListContainer = roomBox.find('.patient-list-container');
-
-    // ▼▼▼ [핵심] 상세 목록 디자인 HTML 생성 로직 (유지) ▼▼▼
-    var patientListHtml = `<div class="patient-card" style="background-color: #ced4da;"><h4 style="width: 100%; text-align: center; color: #212529;">${roomName}</h4></div>`;
-
-    if (patients && patients.length > 0) {
-        patients.forEach(function(p) {
-            patientListHtml += `
-                <div class="patient-card">
-                    <div class="patient-name-box">${p.patient_name}</div>
-                    <div class="patient-details">${p.age}세 / ${p.gender} / ${p.bed_number}번 침대</div>
-                </div>`;
-        });
-    } else {
-        patientListHtml += '<p class="text-white text-center mt-3">현재 입원한 환자가 없습니다.</p>';
-    }
-
-    // 생성된 HTML을 컨테이너에 넣고 부드럽게 표시
-    patientListContainer.html(patientListHtml).fadeIn();
-});
-
-// 3. 배경 클릭 시 축소 이벤트
-$(document).on('click', function(e) {
-    var container = $('.rooms-container.zoomed-in');
-    if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
-        container.removeClass('zoomed-in');
-        // 축소 시, 동적으로 생성했던 상세 목록 컨테이너를 삭제
         container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
-    }
-});
+        roomBox.addClass('selected');
+        container.addClass('zoomed-in');
+        
+        var patients = roomBox.data('patients');
+        roomBox.append('<div class="patient-list-container"></div>');
+        var patientListContainer = roomBox.find('.patient-list-container');
+        var patientListHtml = `<div class="patient-card" style="background-color: #ced4da;"><h4 style="width: 100%; text-align: center; color: #212529;">${roomName}</h4></div>`;
 
+        if (patients && patients.length > 0) {
+            patients.forEach(function(p) {
+                patientListHtml += `<div class="patient-card"><div class="patient-name-box">${p.patient_name}</div><div class="patient-details">${p.age}세 / ${p.gender} / ${p.bed_number}번 침대</div></div>`;
+            });
+        } else {
+            patientListHtml += '<p class="text-white text-center mt-3">현재 입원한 환자가 없습니다.</p>';
+        }
+        patientListContainer.html(patientListHtml).fadeIn();
+    });
+
+    // 3. 배경 클릭 시 축소 이벤트
+    $(document).on('click', function(e) {
+        var container = $('.rooms-container.zoomed-in');
+        if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
+            isZoomedIn = false; // 배경을 클릭하면 확대 상태 해제
+            container.removeClass('zoomed-in');
+            container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
+        }
+    });
+    
     // 4. 슬라이드 메뉴 토글 이벤트
     $('#menu-toggle-btn').on('click', function(e) {
         e.stopPropagation();
