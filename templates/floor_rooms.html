@@ -1,21 +1,79 @@
 <style>
     /* 방 박스 기본 스타일 */
-    /* 방 박스 기본 스타일 */
     .room-box {
-        background-color: #343a40; border: 1px solid #495057; border-radius: 12px;
-        padding: 20px; cursor: pointer; width: 100%; height: 350px;
-        display: flex; flex-direction: column; transition: all 0.4s ease;
-        position: relative; z-index: 1; overflow: hidden; /* 미리보기를 위해 넘치는 내용 숨김 */
+        background-color: #343a40;
+        border: 1px solid #495057;
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        width: 100%;
+        height: 350px; /* 미리보기 높이 */
+        display: flex;
+        flex-direction: column;
+        transition: all 0.4s ease;
+        position: relative;
+        z-index: 1;
+        overflow: hidden; /* 미리보기를 위해 넘치는 내용 숨김 */
     }
-    .room-name { font-size: 1.5em; font-weight: 700; color: #f8f9fa; margin-bottom: 15px; text-align: center; flex-shrink: 0; }
-    .room-box:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1); }
+    .room-name {
+        font-size: 1.5em;
+        font-weight: 700;
+        color: #f8f9fa;
+        margin-bottom: 15px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .room-box:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
     
-    /* ▼▼▼ [추가] 미리보기 환자 목록 스타일 ▼▼▼ */
-    .patient-preview-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; overflow: hidden; width: 100%; }
-    .preview-item { background-color: #495057; border-radius: 8px; padding: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9em; text-align: center; }
-    .preview-item i { font-size: 1.8em; margin-bottom: 8px; color: #ced4da; }
-    .preview-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; color: #f8f9fa; }
-    
+    /* 미리보기 환자 목록 스타일 */
+     /* ▼▼▼ [수정] 미리보기 환자 목록 스타일 ▼▼▼ */
+     .patient-preview-list {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* [유지] 2열 그리드는 그대로 둡니다. */
+        gap: 10px;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    /* ▼▼▼ [수정] 미리보기 아이템 내부를 가로로 정렬 ▼▼▼ */
+    .preview-item {
+        background-color: #495057;
+        border-radius: 8px;
+        padding: 10px 8px; /* 좌우 패딩을 늘려 공간 확보 */
+        display: flex;
+        flex-direction: row; /* [핵심] 세로(column) -> 가로(row)로 변경 */
+        align-items: center; /* 세로 중앙 정렬 */
+        justify-content: flex-start; /* 왼쪽부터 정렬 */
+        font-size: 0.9em;
+        text-align: left; /* 텍스트 왼쪽 정렬 */
+        height: 120px; /* 박스 높이 고정 (선택사항) */
+    }
+
+    /* ▼▼▼ [수정] 아이콘 크기 및 간격 조정 ▼▼▼ */
+    .preview-item img,
+    .preview-item i {
+        font-size: 3.1em; /* 아이콘 크기 살짝 줄임 */
+        width: 48px;
+        height: 48px;
+        margin-bottom: 0; /* 아래쪽 여백 제거 */
+        margin-right: 12px; /* [추가] 이름과의 오른쪽 여백 */
+        color: #ced4da;
+        flex-shrink: 0; /* 아이콘이 찌그러지지 않도록 함 */
+    }
+
+    .preview-item span {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        color: #f8f9fa;
+        font-weight: 500;
+        font-size: 2.1em;
+    }
+
     /* --- 확대 애니메이션 스타일 --- */
     .rooms-container { position: relative; }
     .rooms-container.zoomed-in .room-box {
@@ -36,15 +94,12 @@
         padding: 30px;
         align-items: center;
         justify-content: flex-start;
-        background-color: #4a545e; /* 스크린샷의 어두운 녹색 계열 배경 */
+        background-color: #4a545e;
     }
-    /* 확대 시 기존 방 이름 숨기기 */
-    .rooms-container.zoomed-in .room-box.selected .room-name {
-        display: none;
-    }
-    /* ▼▼▼ [핵심] 이 부분을 추가하세요. ▼▼▼ */
+    /* 확대 시 기존 미리보기 내용 숨김 */
+    .rooms-container.zoomed-in .room-box.selected .room-name,
     .rooms-container.zoomed-in .room-box.selected .patient-preview-list {
-        display: none; /* 확대 시 기존 미리보기 목록을 숨김 */
+        display: none;
     }
     
     /* 어두운 배경 오버레이 */
@@ -66,15 +121,15 @@
         pointer-events: auto;
     }
 
-    /* ▼▼▼ [스크린샷 디자인] 환자 목록 스타일 ▼▼▼ */
+    /* [스크린샷 디자인] 환자 목록 스타일 */
     .patient-list-container {
         width: 100%;
         height: 100%;
-        display: none; /* JavaScript로 제어 */
+        display: none;
         flex-direction: column;
-        gap: 15px; /* 각 환자 카드 사이의 간격 */
-        overflow-y: auto; /* 내용이 넘치면 스크롤 */
-        padding-right: 10px; /* 스크롤바 공간 확보 */
+        gap: 15px;
+        overflow-y: auto;
+        padding-right: 10px;
     }
     .patient-card {
         background-color: #e9ecef;
@@ -83,7 +138,7 @@
         display: flex;
         align-items: center;
         color: #212529;
-        flex-shrink: 0; /* 크기가 줄어들지 않도록 함 */
+        flex-shrink: 0;
     }
     .patient-card .patient-name-box {
         background-color: #ffffff;
@@ -108,11 +163,15 @@
                  data-patients='{{ room.patients | tojson | safe }}'>
                 
                 <div class="room-name">{{ room.name }}</div>
-                
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
-                        {% for p in room.patients[:4] %} <div class="preview-item">
-                                {% if p.gender == '남' or p.gender == 'male' %}<i class="fas fa-male"></i>{% else %}<i class="fas fa-female"></i>{% endif %}
+                        {% for p in room.patients[:4] %}
+                            <div class="preview-item">
+                                <!-- ▼▼▼ [핵심 변경] 최신 이벤트 타입에 따라 아이콘 변경 (직접 저장한 이미지) ▼▼▼ -->{% if p.latest_event_type == 'present' %}
+                                    <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
+                                {% else %}
+                                    <!-- 'present'가 아닐 경우, 아이콘 없이 이름만 표시 --><!-- 성별 아이콘 표시 로직을 제거했습니다. -->{% endif %}
+
                                 <span>{{ p.patient_name }}</span>
                             </div>
                         {% endfor %}
@@ -124,6 +183,7 @@
         </div>
         {% endfor %}
     </div>
+    
     <div class="row g-4 mt-4">
         {% for room in bottom_row_rooms %}
         <div class="col-12 col-md-3">
@@ -132,12 +192,15 @@
                  data-patients='{{ room.patients | tojson | safe }}'>
                 
                 <div class="room-name">{{ room.name }}</div>
-                
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
                         {% for p in room.patients[:4] %}
                             <div class="preview-item">
-                                {% if p.gender == '남' or p.gender == 'male' %}<i class="fas fa-male"></i>{% else %}<i class="fas fa-female"></i>{% endif %}
+                                <!-- ▼▼▼ [핵심 변경] 최신 이벤트 타입에 따라 아이콘 변경 (직접 저장한 이미지) ▼▼▼ -->{% if p.latest_event_type == 'present' %}
+                                    <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
+                                {% else %}
+                                    <!-- 'present'가 아닐 경우, 아이콘 없이 이름만 표시 --><!-- 성별 아이콘 표시 로직을 제거했습니다. -->{% endif %}
+
                                 <span>{{ p.patient_name }}</span>
                             </div>
                         {% endfor %}
