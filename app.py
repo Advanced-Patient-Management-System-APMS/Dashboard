@@ -28,23 +28,23 @@ def index():
         return render_template('index.html', full_name=session.get('full_name'))
     return redirect(url_for('login'))
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        hospital_name = request.form['hospital_name']
         username = request.form['username']
-        password = request.form['password']
+        password = request.form['password'] # 사용자가 입력한 평문 비밀번호
 
         cur = mysql.connection.cursor()
-        query = "SELECT * FROM login_staff WHERE username = %s AND hospital = %s"
-        cur.execute(query, (username, hospital_name))
+        query = "SELECT * FROM login_staff WHERE username = %s"
+        cur.execute(query, (username,)) 
         user = cur.fetchone()
         cur.close()
 
-        if user and bcrypt.check_password_hash(user['password'], password):
+        # ⭐️ bcrypt.check_password_hash 대신 평문 비교를 사용
+        if user and user['password'] == password: # DB에서 가져온 평문과 입력된 평문 비교
             session['username'] = user['username']
             session['full_name'] = user['full_name']
-            session['hospital_name'] = user['hospital']
             flash(f"{user['full_name']}님, 환영합니다!")
             return redirect(url_for('index'))
         else:
