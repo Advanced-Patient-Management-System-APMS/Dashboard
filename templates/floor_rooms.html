@@ -89,8 +89,8 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 50vw;
-        max-width: 600px;
+        width: 60vw;
+        max-width: 1000px;
         height: 75vh;
         z-index: 100;
         pointer-events: auto;
@@ -124,17 +124,30 @@
         pointer-events: auto;
     }
 
-    /* [스크린샷 디자인] 환자 목록 스타일 */
+    /* --- 확대 시 상세 보기 디자인 --- */
     .patient-list-container {
         width: 100%;
         height: 100%;
-        display: none;
+        display: none; /* JS로 제어 */
         flex-direction: column;
-        gap: 15px;
-        overflow-y: auto;
-        padding-right: 10px;
     }
-    .patient-card {
+
+    /* 2열 침대 그리드 */
+    .bed-grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2개의 열 */
+        gap: 25px; /* 침대 카드 사이의 간격 */
+        padding-top: 15px;
+        height: 100%;
+        overflow-y: auto; /* 스크롤은 여기서 */
+    }
+    .bed-grid-column {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .patient-detail-card, .empty-bed-card {
         background-color: #e9ecef;
         border-radius: 15px;
         padding: 10px;
@@ -142,18 +155,54 @@
         align-items: center;
         color: #212529;
         flex-shrink: 0;
+        min-height: 120px;
     }
-    .patient-card .patient-name-box {
-        background-color: #ffffff;
+    .patient-detail-card .patient-icon {
+        width: 60px; height: 60px;
+        margin-right: 15px; flex-shrink: 0;
+    }
+    .patient-detail-card .patient-info-block {
+        flex-grow: 1; text-align: left;
+    }
+    .patient-info-block .name { font-weight: 700; font-size: 1.4em; }
+    .patient-info-block .details { font-size: 1.1em; color: #495057; }
+
+    .bed-number-box {
+        background-color: #ffffff; /* 모든 침대 번호 박스는 흰색 배경 */
         border-radius: 10px;
-        padding: 15px 20px;
-        margin-right: 20px;
-        font-size: 1.1em;
+        width: 60px;
+        height: 100px;
+        font-size: 1.5em;
         font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-left: auto;
+        color: #212529; /* 글자색은 어둡게 */
     }
-    .patient-card .patient-details {
-        font-size: 1.1em;
+    /* ▼▼▼ [수정] '비어 있음' 카드 스타일 ▼▼▼ */
+    .empty-bed-card {
+        display: flex; /* Flexbox 레이아웃 사용 */
+        align-items: center; /* 세로 중앙 정렬 */
+        background-color: #6c757d;
+        color: #e9ecef;
         font-weight: 500;
+        border-radius: 15px;
+        padding: 10px;
+        min-height: 80px;
+    }
+    .empty-bed-card span {
+        margin: 0 auto; /* [핵심] 남는 공간을 모두 여백으로 만들어 중앙에 위치시킴 */
+        font-size: 1.8em;
+    }
+
+    /* ▼▼▼ [수정] 환자 아이콘 스타일 확인/추가 ▼▼▼ */
+    .patient-detail-card .patient-icon {
+        width: 60px;
+        height: 60px;
+        margin-right: 15px;
+        flex-shrink: 0;
     }
 </style>
 
@@ -169,7 +218,6 @@
                 
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
-                        <!-- ▼▼▼ [수정] :4 -> :6 으로 변경 ▼▼▼ -->
                         {% for p in room.patients[:6] %}
                             <div class="preview-item">
                                 <div class="preview-icon">
@@ -203,7 +251,6 @@
                 
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
-                        <!-- ▼▼▼ [수정] :4 -> :6 으로 변경 ▼▼▼ -->
                         {% for p in room.patients[:6] %}
                             <div class="preview-item">
                                 <div class="preview-icon">

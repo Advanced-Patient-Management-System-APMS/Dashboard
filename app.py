@@ -173,24 +173,28 @@ def api_floor_rooms(floor_num):
         print(f"Error fetching floor data: {e}")
         return "데이터 조회 중 오류 발생", 500
 
+
 @app.route('/api/patients_in_room/<room_name>')
 def api_patients_in_room(room_name):
     try:
         cur = mysql.connection.cursor()
         room_number_for_query = room_name.strip('호')
         
+        # ▼▼▼ [핵심 수정] LEFT JOIN을 사용하여 환자가 없는 침대 정보까지 모두 가져옵니다. ▼▼▼
         query = """
-            SELECT p.patient_name, p.age, p.gender, b.bed_number 
-            FROM patients p
-            JOIN beds b ON p.bed_id = b.bed_id
+            SELECT 
+                b.bed_number,
+                p.patient_name, p.age, p.gender, p.disease
+            FROM beds b
             JOIN rooms r ON b.room_id = r.room_id
+            LEFT JOIN patients p ON b.bed_id = p.bed_id
             WHERE r.room_number = %s 
             ORDER BY b.bed_number ASC
         """
         cur.execute(query, [room_number_for_query])
-        patients = cur.fetchall()
+        beds_in_room = cur.fetchall() # 이제 '환자'가 아닌 '침대' 목록을 가져옵니다.
         cur.close()
-        return jsonify(patients)
+        return jsonify(beds_in_room)
     except Exception as e:
         print(f"Error fetching patients in room: {e}")
         return jsonify({'error': '환자 정보 조회 중 오류 발생'}), 500

@@ -157,42 +157,92 @@ $(function() {
         }
     });
 
-    // 2. 방 클릭 이벤트
-    $(document).on('click', '.room-box', function(e) {
-        e.stopPropagation();
-        isZoomedIn = true; // 방을 클릭하면 확대 상태로 변경
+    // 2. 방 클릭 이벤트 (최종 수정)
+$(document).on('click', '.room-box', function(e) {
+    e.stopPropagation();
+    isZoomedIn = true; // 확대 상태로 변경
+    
+    var roomBox = $(this);
+    var roomName = roomBox.data('room');
+    var container = roomBox.closest('.rooms-container');
 
-        var roomBox = $(this);
-        var roomName = roomBox.data('room');
-        var container = roomBox.closest('.rooms-container');
+    if (roomBox.hasClass('selected')) return;
 
-        if (roomBox.hasClass('selected')) return;
-
-        container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
-        roomBox.addClass('selected');
-        container.addClass('zoomed-in');
-        
-        var patients = roomBox.data('patients');
+    container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
+    roomBox.addClass('selected');
+    container.addClass('zoomed-in');
+    
+    $.get('/api/patients_in_room/' + roomName, function(beds) {
         roomBox.append('<div class="patient-list-container"></div>');
         var patientListContainer = roomBox.find('.patient-list-container');
-        var patientListHtml = `<div class="patient-card" style="background-color: #ced4da;"><h4 style="width: 100%; text-align: center; color: #212529;">${roomName}</h4></div>`;
 
-        if (patients && patients.length > 0) {
-            patients.forEach(function(p) {
-                patientListHtml += `<div class="patient-card"><div class="patient-name-box">${p.patient_name}</div><div class="patient-details">${p.age}세 / ${p.gender} / ${p.bed_number}번 침대</div></div>`;
+        var leftColumnHtml = '';
+        var rightColumnHtml = '';
+
+        if (beds && beds.length > 0) {
+            // forEach 루프 안에서, data-patients에 저장된 환자 정보도 함께 사용합니다.
+            var patientsFromData = roomBox.data('patients');
+
+            beds.forEach(function(bed) {
+                var cardHtml = '';
+                // 환자가 있는 침대
+                if (bed.patient_name) {
+
+                    // ▼▼▼ [핵심] JavaScript 안에서 직접 아이콘 로직을 구현합니다. ▼▼▼
+                    let iconHtml = '';
+                    // data-patients에서 현재 환자(bed)와 이름이 같은 환자를 찾습니다.
+                    var patientData = patientsFromData.find(p => p.patient_name === bed.patient_name);
+
+                    if (patientData && patientData.latest_event_type === 'present') {
+                        iconHtml = `<img src="/static/icons/present_icon.png" alt="Present" class="patient-icon">`;
+                    } 
+
+                    cardHtml = `
+                        <div class="patient-detail-card">
+                            ${iconHtml} 
+                            <div class="patient-info-block">
+                                <div class="name">${bed.patient_name}</div>
+                                <div class="details">${bed.age}세 / ${bed.gender} / 병명: ${bed.disease || '정보 없음'}</div>
+                            </div>
+                            <div class="bed-number-box">${bed.bed_number}</div>
+                        </div>`;
+                } 
+                // 빈 침대 (수정 없음)
+                else {
+                    cardHtml = `
+                        <div class="empty-bed-card">
+                            <span>비어 있음</span>
+                            <div class="bed-number-box">${bed.bed_number}</div>
+                        </div>`;
+                }
+
+                if (bed.bed_number <= 4) {
+                    leftColumnHtml += cardHtml;
+                } else {
+                    rightColumnHtml += cardHtml;
+                }
             });
-        } else {
-            patientListHtml += '<p class="text-white text-center mt-3">현재 입원한 환자가 없습니다.</p>';
         }
-        patientListContainer.html(patientListHtml).fadeIn();
-    });
 
+        // 최종 HTML 조합은 그대로 유지
+        var finalHtml = `
+            <div class="patient-detail-card" style="background-color: #ced4da; justify-content: center;"><h4 style="color: #212529;">${roomName}</h4></div>
+            <div class="bed-grid-container">
+                <div class="bed-grid-column">${leftColumnHtml}</div>
+                <div class="bed-grid-column">${rightColumnHtml}</div>
+            </div>
+        `;
+        
+        patientListContainer.html(finalHtml).fadeIn();
+    });
+});
     // 3. 배경 클릭 시 축소 이벤트
     $(document).on('click', function(e) {
         var container = $('.rooms-container.zoomed-in');
         if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
-            isZoomedIn = false; // 배경을 클릭하면 확대 상태 해제
+            isZoomedIn = false; // [추가] 배경을 클릭하면 확대 상태 해제
             container.removeClass('zoomed-in');
+            // 축소 시, 동적으로 생성했던 상세 보기 컨테이너를 삭제
             container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
         }
     });
