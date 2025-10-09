@@ -180,11 +180,11 @@ def api_patients_in_room(room_name):
         cur = mysql.connection.cursor()
         room_number_for_query = room_name.strip('호')
         
-        # ▼▼▼ [핵심 수정] LEFT JOIN을 사용하여 환자가 없는 침대 정보까지 모두 가져옵니다. ▼▼▼
+        # ▼▼▼ [핵심 수정] SELECT 목록에 p.patient_id를 추가합니다. ▼▼▼
         query = """
             SELECT 
                 b.bed_number,
-                p.patient_name, p.age, p.gender, p.disease
+                p.patient_id, p.patient_name, p.age, p.gender, p.disease
             FROM beds b
             JOIN rooms r ON b.room_id = r.room_id
             LEFT JOIN patients p ON b.bed_id = p.bed_id
@@ -192,12 +192,50 @@ def api_patients_in_room(room_name):
             ORDER BY b.bed_number ASC
         """
         cur.execute(query, [room_number_for_query])
-        beds_in_room = cur.fetchall() # 이제 '환자'가 아닌 '침대' 목록을 가져옵니다.
+        beds_in_room = cur.fetchall()
         cur.close()
         return jsonify(beds_in_room)
     except Exception as e:
         print(f"Error fetching patients in room: {e}")
         return jsonify({'error': '환자 정보 조회 중 오류 발생'}), 500
+    
+# ▼▼▼ [새로 추가] 특정 환자의 상세 정보와 스마트링 데이터를 함께 반환하는 API ▼▼▼
+@app.route('/api/patient_detail/<int:patient_id>')
+def api_patient_detail(patient_id):
+    try:
+        cur = mysql.connection.cursor()
+        
+        # 1. 환자 기본 정보 조회
+        query_info = """
+            SELECT p.patient_id, p.patient_name, p.age, p.gender, p.disease, r.room_number, b.bed_number
+            FROM patients p
+            JOIN beds b ON p.bed_id = b.bed_id
+            JOIN rooms r ON b.room_id = r.room_id
+            WHERE p.patient_id = %s
+        """
+        cur.execute(query_info, [patient_id])
+        patient_info = cur.fetchone()
+        
+        if not patient_info:
+            return jsonify({'error': '환자 정보를 찾을 수 없습니다.'}), 404
+
+        # 2. 해당 환자의 스마트링 데이터 조회 (최신 50개)
+        query_logs = "SELECT spo2, heartrate, timestamp FROM smartring_logs WHERE patient_id = %s ORDER BY timestamp DESC LIMIT 50"
+        cur.execute(query_logs, [patient_id])
+        smartring_logs = cur.fetchall()
+        
+        cur.close()
+
+        # 3. 환자 정보와 스마트링 기록을 합쳐서 JSON으로 반환
+        return jsonify({
+            'info': patient_info,
+            'logs': smartring_logs
+        })
+
+    except Exception as e:
+        print(f"Error fetching patient detail: {e}")
+        return jsonify({'error': '환자 상세 정보 조회 중 오류 발생'}), 500
+
     
 # --- 서버 실행 ---
 if __name__ == '__main__':
