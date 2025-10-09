@@ -8,75 +8,114 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #2f353b;
-            font-family: 'Noto Sans KR', sans-serif;
-            color: #f8f9fa;
-            overflow-x: hidden; 
-        }
-
-        /* --- 슬라이드 메뉴 --- */
-        #slide-menu {
-            position: fixed; top: 0; left: 0;
-            width: 200px; height: 100vh;
-            background: #343a40;
-            z-index: 1200;
-            box-shadow: 2px 0 24px rgba(0,0,0,0.17);
-            transform: translateX(-100%);
-            transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1);
-        }
+        /* (기존의 body, 메뉴, 병실 칸 등 기본 스타일은 그대로 유지) */
+        body { margin: 0; padding: 0; background-color: #2f353b; font-family: 'Noto Sans KR', sans-serif; color: #f8f9fa; overflow-x: hidden; }
+        #slide-menu { position: fixed; top: 0; left: 0; width: 200px; height: 100vh; background: #343a40; z-index: 1200; box-shadow: 2px 0 24px rgba(0,0,0,0.17); transform: translateX(-100%); transition: transform 0.4s cubic-bezier(0.25,0.8,0.25,1); }
         #slide-menu.open { transform: translateX(0); }
         #bookmark-tabs .floor-btn { display: block; width: 100%; padding: 15px 25px; text-align: center; font-size: 1.1em; font-weight: 500; border: none; border-bottom: 1px solid #495057; background-color: transparent; color: #adb5bd; transition: all 0.2s ease-in-out; cursor: pointer; }
         #bookmark-tabs .floor-btn.active, #bookmark-tabs .floor-btn:hover { background-color: #0d6efd; color: white; }
-        
-        /* --- 메뉴 토글 버튼 --- */
-        #menu-toggle-btn {
-            position: fixed;
-            left: 20px;
-            top: 50%; 
-            transform: translateY(-50%);
-            z-index: 1300; 
-            background:#0d6efd; 
-            color:#fff; 
-            border:none;
-            border-radius: 0 1em 1em 0; 
-            padding:16px 12px; 
-            font-size:1.5em; 
-            cursor:pointer;
-            transition: left 0.4s cubic-bezier(0.25,0.8,0.25,1);
-        }
-        /* 메뉴가 열렸을 때 버튼 위치 이동 */
-        #slide-menu.open + #menu-toggle-btn {
-            left: 200px;
-        }
-
-        /* ▼▼▼ [핵심 수정] 메인 콘텐츠 영역 스타일 ▼▼▼ */
-        #main-content-box {
-            padding: 30px;
-            transition: margin-left 0.4s cubic-bezier(0.25,0.8,0.25,1);
-        }
-        /* 메뉴가 열렸을 때 메인 콘텐츠를 오른쪽으로 밀어냄 */
-        #slide-menu.open ~ #main-content-box {
-            margin-left: 200px;
-        }
-
-        /* --- 상단 고정 요소 (main-content-box 내부로 이동) --- */
+        #menu-toggle-btn { position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 1300; background:#0d6efd; color:#fff; border:none; border-radius: 0 1em 1em 0; padding:16px 12px; font-size:1.5em; cursor:pointer; transition: left 0.4s cubic-bezier(0.25,0.8,0.25,1); }
+        #slide-menu.open + #menu-toggle-btn { left: 200px; }
+        #main-content-box { padding: 30px; transition: margin-left 0.4s cubic-bezier(0.25,0.8,0.25,1); }
+        #slide-menu.open ~ #main-content-box { margin-left: 200px; }
         #realtime-clock { position: absolute; top: 30px; right: 30px; font-size: 1.6em; font-weight: 600; color: #e9ecef; }
         #user-welcome { position: absolute; top: 80px; right: 30px; color: #adb5bd; font-size: 1.3em; text-align: right; font-weight: 500; }
         .logout-link { color: #ced4da; text-decoration: underline; font-size: 0.9em; margin-left: 8px; }
         .logout-link:hover { color: white; }
-
         .main-title { font-size: 2.2em; font-weight: 700; color: #f8f9fa; margin-bottom: 20px; text-align: center; }
         #current-floor-title { padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid #495057; font-size: 1.8em; font-weight: 700; color: #f8f9fa; }
-        /* ▼▼▼ [추가] 환자 상세 정보 모달 스타일 ▼▼▼ */
         .modal-body .log-table { max-height: 600px; max-width: 1000px; overflow-y: auto; }
+        
+        /* ▼▼▼ [핵심 수정] 경고 애니메이션 스타일 ▼▼▼ */
+        .room-box.emergency-alert-room {
+            border: 4px solid #dc3545;
+            animation: pulse-red 1.5s infinite;
+        }
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+        }
+
+        #emergency-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); z-index: 2900;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        #emergency-modal-content {
+            /* ▼▼▼ 배너 크기 조절: padding 값으로 전체 크기(여백)를 조절할 수 있습니다 ▼▼▼ */
+            padding: 160px 300px;
+            background: #dc3545; color: white;
+            border-radius: 15px; text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 3px solid #ffc107;
+            transform: scale(0); 
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #emergency-modal-content .fa-triangle-exclamation { 
+            /* ▼▼▼ 배너 크기 조절: 아이콘의 글자 크기(font-size)를 조절할 수 있습니다 ▼▼▼ */
+            font-size: 6em; 
+            margin-bottom: 20px; 
+            color: #ffc107; 
+        }
+        #emergency-modal-content h2 { 
+            /* ▼▼▼ 배너 크기 조절: 메인 메시지의 글자 크기(font-size)를 조절할 수 있습니다 ▼▼▼ */
+            font-size: 2.8em; 
+            font-weight: 700; 
+            margin: 0 0 10px; 
+        }
+        #emergency-modal-content p { 
+            /* ▼▼▼ 배너 크기 조절: 환자 정보의 글자 크기(font-size)를 조절할 수 있습니다 ▼▼▼ */
+            font-size: 2.1em; 
+            margin: 0; 
+        }
+        #emergency-modal-close-btn { position: absolute; top: -20px; right: -20px; width: 50px; height: 50px; background: #ffc107; color: #dc3545; border: 3px solid white; border-radius: 50%; font-size: 1.8em; font-weight: bold; line-height: 1; cursor: pointer; }
+
+        #emergency-modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+            animation: pulse-background 3.5s infinite;
+        }
+        #emergency-modal-overlay.visible #emergency-modal-content {
+            transform: scale(1);
+            /* [추가] 흐려졌다 선명해지는 애니메이션을 다시 적용합니다. */
+            animation: pulse-fade 3.5s infinite;
+        }
+
+        @keyframes pulse-background {
+            0%, 100% { background-color: rgba(0, 0, 0, 0.7); }
+            50% { background-color: rgba(80, 20, 20, 0.85); }
+        }
+
+        /* [추가] 배너가 흐려졌다 선명해지는 애니메이션 정의 */
+        @keyframes pulse-fade {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.2;
+            }
+        }
+
     </style>
 </head>
 <body>
 
-<!-- ▼▼▼ [구조 수정] 슬라이드 메뉴와 토글 버튼 ▼▼▼ -->
+<!-- ▼▼▼ [핵심] 확대될 배너의 HTML 구조 (body 바로 아래에 추가) ▼▼▼ -->
+<div id="emergency-modal-overlay">
+    <div id="emergency-modal-content">
+        <button id="emergency-modal-close-btn">&times;</button>
+        <i class="fas fa-triangle-exclamation"></i>
+        <h2 id="emergency-modal-title"></h2>
+        <p id="emergency-modal-patient"></p>
+    </div>
+</div>
+
+<audio id="alert-sound" src="/static/emergency_alert.mp3" preload="auto"></audio>
+
+
 <div id="slide-menu">
     <div id="bookmark-tabs">
         <h4 style="padding: 15px 25px;">층별 현황</h4>
@@ -91,7 +130,6 @@
 </div>
 <button id="menu-toggle-btn"><i class="fas fa-bars"></i></button>
 
-<!-- ▼▼▼ [구조 수정] 불필요한 div 제거 및 id 변경, 시계/환영문구 이동 ▼▼▼ -->
 <div id="main-content-box">
     <div id="realtime-clock"></div>
     {% if full_name %}
@@ -109,7 +147,6 @@
     <div id="beds-area" style="display: none;"></div>
 </div>
 
-<!-- ▼▼▼ [추가] 환자 상세 정보 모달(팝업창) ▼▼▼ -->
 <div class="modal fade" id="patientDetailModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content text-white" style="background-color: #343a40;">
@@ -127,71 +164,113 @@
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ▼▼▼ [최종] 중복을 모두 제거한 완전한 JavaScript 코드 ▼▼▼
 $(function() {
-    
-    // --- 상태 변수 ---
+    $.ajaxSetup({ cache: false });
     let currentFloor = 1;
     let isZoomedIn = false;
-    let modalIsOpen = false; // [추가] 모달이 열려있는지 기억하는 변수
-
+    let modalIsOpen = false;
+    // ▼▼▼ [추가] 알림 음소거 상태를 기억하는 변수 ▼▼▼
+    let isEmergencyMuted = false;
     let detailModal = new bootstrap.Modal(document.getElementById('patientDetailModal'));
-
-        // --- Bootstrap 모달 이벤트 리스너 ---
-    const patientModalElement = document.getElementById('patientDetailModal');
-    // 모달이 보여지기 시작할 때
-    patientModalElement.addEventListener('show.bs.modal', function () {
-        modalIsOpen = true;
-    });
-    // 모달이 완전히 사라진 후
-    patientModalElement.addEventListener('hidden.bs.modal', function () {
-        modalIsOpen = false;
-    });
-
-    // --- 함수 정의 ---
+    
     function updateClock() {
         const now = new Date();
-        const timeString = now.toLocaleString('ko-KR'); // 더 간단한 시간 형식
-        $('#realtime-clock').text(timeString);
+        $('#realtime-clock').text(now.toLocaleString('ko-KR'));
     }
 
     function updateContent(floor) {
-        currentFloor = floor; // 현재 층 번호 업데이트
+        currentFloor = floor;
         $('#current-floor-title').text(floor + '층 병동');
         $.get('/api/floor_rooms/' + floor, function(html) {
-            $('#rooms-area').html(html);
+            if (!isZoomedIn) {
+                $('#rooms-area').html(html);
+            }
         });
     }
 
-    // --- 초기 실행 ---
+    // ▼▼▼ [수정] 알림 시스템 로직 수정 ▼▼▼
+    function checkEmergencies() {
+        // 1. 사용자가 알림을 음소거했다면, 함수를 즉시 종료
+        if (isEmergencyMuted) {
+            console.log("알림이 사용자에 의해 음소거되었습니다.");
+            return;
+        }
+
+        const alertSound = document.getElementById('alert-sound');
+        const modalOverlay = $('#emergency-modal-overlay');
+        const modalContent = $('#emergency-modal-content');
+
+        $.get('/api/check_emergencies', function(data) {
+            const emergencies = data.emergencies || [];
+            $('.room-box.emergency-alert-room').removeClass('emergency-alert-room');
+
+            if (emergencies.length > 0) {
+                // 긴급 상황 발생 시 로직 (이전과 동일)
+                if (alertSound.paused) {
+                    alertSound.play().catch(e => {});
+                }
+                emergencies.forEach(emergency => {
+                    const roomSelector = `.room-box[data-room='${emergency.room_number}호']`;
+                    $(roomSelector).addClass('emergency-alert-room');
+                });
+                
+                if (!modalOverlay.hasClass('visible')) {
+                    const firstEmergency = emergencies[0];
+                    const roomSelector = `.room-box[data-room='${firstEmergency.room_number}호']`;
+                    const roomBox = $(roomSelector);
+
+                    if (roomBox.length > 0) {
+                        $('#emergency-modal-title').text(firstEmergency.event_value || '긴급 상황 발생!');
+                        $('#emergency-modal-patient').text(`${firstEmergency.room_number}호 ${firstEmergency.patient_name} 환자`);
+                        const rect = roomBox.get(0).getBoundingClientRect();
+                        const originX = rect.left + rect.width / 2;
+                        const originY = rect.top + rect.height / 2;
+                        modalContent.css('transform-origin', `${originX}px ${originY}px`);
+                        modalOverlay.addClass('visible');
+                    }
+                }
+            } else {
+                // 긴급 상황이 모두 해제되었을 때
+                if (modalOverlay.hasClass('visible')) {
+                    modalOverlay.removeClass('visible');
+                }
+                alertSound.pause();
+                alertSound.currentTime = 0;
+
+                // 2. [중요] 음소거 상태를 자동으로 해제하여, 다음 긴급 상황에 대비
+                isEmergencyMuted = false;
+            }
+        });
+    }
+
     setInterval(updateClock, 1000);
     updateClock();
     updateContent(currentFloor);
 
-    // [핵심] 자동 새로고침 로직
+    // ▼▼▼ [수정] 주기적 호출 로직을 분리하여 명확하게 만듭니다. ▼▼▼
     setInterval(function() {
-        if (!isZoomedIn) { // 확대된 상태가 아닐 때만 실행
+        // 5초마다 병실 정보는 확대되지 않았을 때만 업데이트
+        if (!isZoomedIn) {
             updateContent(currentFloor);
         }
+        // 5초마다 긴급 상황은 항상 체크
+        checkEmergencies();
     }, 5000);
 
-    // --- 이벤트 핸들러 (중복 제거) ---
-
-    // 1. 층 탭 클릭 이벤트
+    // --- 이벤트 핸들러 ---
     $('#bookmark-tabs').on('click', '.floor-btn', function() {
-        isZoomedIn = false; // 층을 바꾸면 확대 상태 해제
-        $('#bookmark-tabs .floor-btn').removeClass('active');
-        $(this).addClass('active');
-        var floor = $(this).data('floor');
-        if (floor) { // '환자 등록' 버튼은 data-floor가 없으므로 제외
-            updateContent(floor);
+        if ($(this).data('floor')) {
+            isZoomedIn = false;
+            $('#bookmark-tabs .floor-btn').removeClass('active');
+            $(this).addClass('active');
+            updateContent($(this).data('floor'));
         }
     });
-
-    // 2. 방 클릭 이벤트 (최종 수정)
+    
     $(document).on('click', '.room-box', function(e) {
+        // ... (기존 방 클릭 이벤트 로직은 그대로 유지)
         e.stopPropagation();
-        isZoomedIn = true; // 확대 상태로 변경
+        isZoomedIn = true; 
         var roomBox = $(this);
         var roomName = roomBox.data('room');
         var container = roomBox.closest('.rooms-container');
@@ -213,29 +292,13 @@ $(function() {
                     var cardHtml = '';
                     if (bed.patient_name) {
                         let iconHtml = '';
-                        // data-patients에서 현재 환자(bed)와 이름이 같은 환자를 찾습니다.
-                        var patientData = patientsFromData.find(p => p.patient_name === bed.patient_name);
-
-                        if (patientData && patientData.latest_event_type === 'present') {
-                            iconHtml = `<img src="/static/icons/present_icon.png" alt="Present" class="patient-icon">`;
-                        } 
-                        else if (patientData && patientData.latest_event_type === 'absent') {
-                            iconHtml = `<img src="/static/icons/absent_icon.png" alt="Absent" class="patient-icon">`;
-                        } 
-                        else if (patientData && patientData.latest_event_type === 'meal') {
-                            iconHtml = `<img src="/static/icons/meal_icon.png" alt="Meal" class="patient-icon">`;
-                        } 
-                        else if (patientData && patientData.latest_event_type === 'emergency') {
-                            iconHtml = `<img src="/static/icons/emergency_icon.png" alt="Emergency" class="patient-icon">`;
-                        }
-                        else if (patientData && patientData.latest_event_type === 'sleeping') {
-                            iconHtml = `<img src="/static/icons/sleeping_icon.png" alt="Sleeping" class="patient-icon">`;
-                        }
-                        else if (patientData && patientData.latest_event_type === 'examination') {
-                            iconHtml = `<img src="/static/icons/examination_icon.png" alt="Examination" class="patient-icon">`;
-                        }  
+                        var patientData = (patientsFromData || []).find(p => p.patient_name === bed.patient_name);
                         
-                        // ▼▼▼ [핵심 수정] data-patient-id에 bed.patient_id를 정확히 넣어줍니다. ▼▼▼
+                        // 아이콘 결정 로직 (생략 없이 전체 포함)
+                        if (patientData && patientData.latest_event_type) {
+                            iconHtml = `<img src="/static/icons/${patientData.latest_event_type}_icon.png" alt="${patientData.latest_event_type}" class="patient-icon">`;
+                        }
+                        
                         cardHtml = `
                             <div class="patient-detail-card" data-patient-id="${bed.patient_id}">
                                 ${iconHtml} 
@@ -246,11 +309,7 @@ $(function() {
                                 <div class="bed-number-box">${bed.bed_number}</div>
                             </div>`;
                     } else {
-                        cardHtml = `
-                            <div class="empty-bed-card">
-                                <span>비어 있음</span>
-                                <div class="bed-number-box">${bed.bed_number}</div>
-                            </div>`;
+                        cardHtml = `<div class="empty-bed-card"><span>비어 있음</span><div class="bed-number-box">${bed.bed_number}</div></div>`;
                     }
                     if (bed.bed_number <= 4) { leftColumnHtml += cardHtml; } else { rightColumnHtml += cardHtml; }
                 });
@@ -260,20 +319,19 @@ $(function() {
                 <div class="bed-grid-container">
                     <div class="bed-grid-column">${leftColumnHtml}</div>
                     <div class="bed-grid-column">${rightColumnHtml}</div>
-                </div>
-            `;
+                </div>`;
             patientListContainer.html(finalHtml).fadeIn();
         });
     });
 
-    // 3. 환자 카드 클릭 이벤트 (모달 띄우기)
     $(document).on('click', '.patient-detail-card', function(e) {
+        // ... (기존 환자 카드 클릭 이벤트 로직은 그대로 유지)
         e.stopPropagation();
         var patientId = $(this).data('patient-id');
         if (!patientId) return;
 
         $.get('/api/patient_detail/' + patientId, function(data) {
-            if (data.error) { alert(data.error); return; }
+            if (data.error) { console.error(data.error); return; }
             $('#patientDetailTitle').text(`${data.info.patient_name} (${data.info.age}세/${data.info.gender}) 님 상세 정보`);
             var logsHtml = '<h5>최신 스마트링 데이터</h5><div class="log-table"><table class="table table-dark table-striped table-hover"><thead><tr><th>측정시간</th><th>심박수(bpm)</th><th>산소포화도(%)</th></tr></thead><tbody>';
             if (data.logs.length > 0) {
@@ -290,15 +348,24 @@ $(function() {
         });
     });
 
-        // ▼▼▼ [최종 수정] 배경/메뉴 닫기 이벤트를 아래 코드로 교체 ▼▼▼
+// ▼▼▼ [수정] 배너 닫기 버튼 클릭 이벤트 ▼▼▼
+    $('#emergency-modal-close-btn').on('click', function() {
+        // 1. UI를 즉시 숨김
+        $('#emergency-modal-overlay').removeClass('visible');
+        const alertSound = document.getElementById('alert-sound');
+        alertSound.pause();
+        alertSound.currentTime = 0;
+        // 병실 테두리 효과도 즉시 제거
+        $('.room-box.emergency-alert-room').removeClass('emergency-alert-room');
+
+        // 2. [중요] 음소거 상태로 전환하여 다음 5초부터 checkEmergencies 함수가 작동하지 않도록 함
+        isEmergencyMuted = true;
+        console.log("알림 시스템이 중지되었습니다. 긴급 상황이 해제되면 자동으로 다시 활성화됩니다.");
+    });
+
     $(document).on('click', function(e) {
+        if (modalIsOpen) { return; }
 
-        // [핵심] 만약 모달(팝업)이 열려있다면, 배경 클릭으로 방을 닫지 않음
-        if (modalIsOpen) {
-            return;
-        }
-
-        // 배경 클릭 시 확대된 방 닫기
         var container = $('.rooms-container.zoomed-in');
         if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
             isZoomedIn = false;
@@ -306,26 +373,18 @@ $(function() {
             container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
         }
         
-        // 메뉴 바깥쪽 클릭 시 메뉴 닫기
         if ($('#slide-menu').hasClass('open') && !$(e.target).closest('#slide-menu').length && !$(e.target).is('#menu-toggle-btn')) {
             $('#slide-menu').removeClass('open');
         }
     });
     
-    // 4. 슬라이드 메뉴 토글 이벤트
     $('#menu-toggle-btn').on('click', function(e) {
         e.stopPropagation();
         $('#slide-menu').toggleClass('open');
-    });
-
-    // 5. 메뉴 바깥쪽 클릭 시 메뉴 닫기 이벤트
-    $(document).on('click', function(e) {
-        if ($('#slide-menu').hasClass('open') && !$(e.target).closest('#slide-menu').length && !$(e.target).is('#menu-toggle-btn')) {
-            $('#slide-menu').removeClass('open');
-        }
     });
 });
 </script>
 
 </body>
 </html>
+
