@@ -168,10 +168,20 @@ $(function() {
     $.ajaxSetup({ cache: false });
     let currentFloor = 1;
     let isZoomedIn = false;
-    let modalIsOpen = false;
-    // ▼▼▼ [추가] 알림 음소거 상태를 기억하는 변수 ▼▼▼
+    let modalIsOpen = false; // 환자 정보 팝업 상태 변수
     let isEmergencyMuted = false;
     let detailModal = new bootstrap.Modal(document.getElementById('patientDetailModal'));
+    
+    // ▼▼▼ [추가] Bootstrap 모달 이벤트 감지 ▼▼▼
+    const patientModalElement = document.getElementById('patientDetailModal');
+    // 모달이 보여지기 시작하면, modalIsOpen를 true로 설정
+    patientModalElement.addEventListener('show.bs.modal', function () {
+        modalIsOpen = true;
+    });
+    // 모달이 완전히 사라진 후, modalIsOpen를 false로 설정
+    patientModalElement.addEventListener('hidden.bs.modal', function () {
+        modalIsOpen = false;
+    });
     
     function updateClock() {
         const now = new Date();
@@ -363,9 +373,16 @@ $(function() {
         console.log("알림 시스템이 중지되었습니다. 긴급 상황이 해제되면 자동으로 다시 활성화됩니다.");
     });
 
+    // ▼▼▼ [수정] 배경/메뉴 닫기 이벤트를 이 하나로 통합하고 수정합니다. ▼▼▼
     $(document).on('click', function(e) {
-        if (modalIsOpen) { return; }
+        
+        // [핵심] 환자 상세 정보 팝업(modalIsOpen)이 열려있다면,
+        // 배경 클릭으로 방을 닫거나 메뉴를 닫는 로직을 실행하지 않고 즉시 종료합니다.
+        if (modalIsOpen) {
+            return;
+        }
 
+        // 1. 배경 클릭 시 확대된 방 닫기 로직
         var container = $('.rooms-container.zoomed-in');
         if (container.length > 0 && $(e.target).closest('.room-box.selected').length === 0) {
             isZoomedIn = false;
@@ -373,10 +390,12 @@ $(function() {
             container.find('.room-box.selected').removeClass('selected').find('.patient-list-container').remove();
         }
         
-        if ($('#slide-menu').hasClass('open') && !$(e.target).closest('#slide-menu').length && !$(e.target).is('#menu-toggle-btn')) {
+        // 2. 메뉴 바깥쪽 클릭 시 메뉴 닫기 로직
+        if ($('#slide-menu').hasClass('open') && !$(e.target).closest('#slide-menu').length && !$(e.target).closest('#menu-toggle-btn').length) {
             $('#slide-menu').removeClass('open');
         }
     });
+
     
     $('#menu-toggle-btn').on('click', function(e) {
         e.stopPropagation();
