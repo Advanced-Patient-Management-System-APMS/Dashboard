@@ -1,209 +1,209 @@
 <style>
     /* 방 박스 기본 스타일 */
-    .room-box {
-        background-color: #343a40;
-        border: 1px solid #495057;
-        border-radius: 12px;
-        padding: 20px;
-        cursor: pointer;
-        width: 100%;
-        /* ▼▼▼ [수정] 6명을 표시하기 위해 높이를 늘립니다 ▼▼▼ */
-        height: 350px; 
-        display: flex;
-        flex-direction: column;
-        transition: all 0.4s ease;
-        position: relative;
-        z-index: 1;
-        overflow: hidden;
-    }
-    .room-name {
-        font-size: 1.5em;
-        font-weight: 700;
-        color: #f8f9fa;
-        margin-bottom: 15px;
-        text-align: center;
-        flex-shrink: 0;
-    }
-    .room-box:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-        border-color: #0d6efd;
-    }
-    
-    /* --- 미리보기 스타일 (기존 스타일 유지) --- */
-    .patient-preview-list {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        overflow: hidden;
-        width: 100%;
-    }
-    .preview-item {
-        background-color: #495057;
-        border-radius: 8px;
-        padding: 10px 8px;
-        display: flex;
-        align-items: center;
-        height: 75px;
-    }
-    .preview-icon {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-    .preview-icon img,
-    .preview-icon i {
-        width: 48px;
-        height: 48px;
-        font-size: 1.8em;
-        color: #ced4da;
-    }
-    .separator {
-        width: 7px;
-        height: 100%;
-        background-color: #6c757d;
-        margin: 0 10px;
-    }
-    .preview-name {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 100%;
-        color: #f8f9fa;
-        font-weight: 500;
-        font-size: 1.7em;
-    }
+/* 방 박스 기본 스타일 */
+.room-box {
+    background-color: #d7dfe4; /* 밝은 흰색 */
+    border: 1px solid #a0aec0; /* 연한 회색 */
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    width: 100%;
+    height: 350px; 
+    display: flex;
+    flex-direction: column;
+    transition: all 0.4s ease;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+}
+.room-name {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: #276ef1; /* 의료 파랑 */
+    margin-bottom: 15px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.room-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(39, 110, 241, 0.08);
+    border-color: #38b2ac; /* 민트 포인트 */
+}
 
-    /* --- 확대 애니메이션 스타일 --- */
-    .rooms-container { position: relative; }
-    .rooms-container.zoomed-in .room-box {
-        opacity: 0.1;
-        pointer-events: none;
-    }
-    .rooms-container.zoomed-in .room-box.selected {
-        opacity: 1;
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 60vw;
-        max-width: 1000px;
-        height: 75vh;
-        z-index: 100;
-        pointer-events: auto;
-        padding: 30px;
-        align-items: center;
-        justify-content: flex-start;
-        background-color: #4a545e;
-    }
-    /* 확대 시 기존 미리보기 내용 숨김 */
-    .rooms-container.zoomed-in .room-box.selected .room-name,
-    .rooms-container.zoomed-in .room-box.selected .patient-preview-list {
-        display: none;
-    }
-    
-    /* 어두운 배경 오버레이 */
-    .rooms-container::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
-        background-color: rgba(0, 0, 0, 0.8);
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.4s ease;
-        z-index: 50;
-    }
-    .rooms-container.zoomed-in::before {
-        opacity: 1;
-        pointer-events: auto;
-    }
+/* --- 미리보기 스타일 --- */
+.patient-preview-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    overflow: hidden;
+    width: 100%;
+}
+.preview-item {
+    background-color: #c0f8ef; /* 민트빛 배경 */
+    border-radius: 8px;
+    padding: 10px 8px;
+    display: flex;
+    align-items: center;
+    height: 75px;
+}
+.preview-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.preview-icon img,
+.preview-icon i {
+    width: 48px;
+    height: 48px;
+    font-size: 1.8em;
+    color: #63b3ed; /* 밝은 파랑 */
+}
+.separator {
+    width: 4px;
+    height: 130%;
+    background-color: #9ec0bc; /* 연민트 */
+    margin: 0 10px;
+}
+.preview-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    color: #2d3748;
+    font-weight: 500;
+    font-size: 1.7em;
+}
 
-    /* --- 확대 시 상세 보기 디자인 --- */
-    .patient-list-container {
-        width: 100%;
-        height: 100%;
-        display: none; /* JS로 제어 */
-        flex-direction: column;
-    }
+/* --- 확대 애니메이션 스타일 --- */
+.rooms-container { position: relative; }
+.rooms-container.zoomed-in .room-box {
+    opacity: 0.1;
+    pointer-events: none;
+}
+.rooms-container.zoomed-in .room-box.selected {
+    opacity: 1;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60vw;
+    max-width: 1000px;
+    height: 75vh;
+    z-index: 100;
+    pointer-events: auto;
+    padding: 30px;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: #e3f8ff; /* 매우 옅은 블루톤 */
+}
+.rooms-container.zoomed-in .room-box.selected .room-name,
+.rooms-container.zoomed-in .room-box.selected .patient-preview-list {
+    display: none;
+}
 
-    /* 2열 침대 그리드 */
-    .bed-grid-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* 2개의 열 */
-        gap: 120px; /* 침대 카드 사이의 간격 */
-        padding-top: 15px;
-        height: 100%;
-        overflow-y: auto; /* 스크롤은 여기서 */
-    }
-    .bed-grid-column {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
+/* 어두운 배경 오버레이 */
+.rooms-container::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(44, 62, 80, 0.70); /* 다크네이비 반투명 */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+    z-index: 50;
+}
+.rooms-container.zoomed-in::before {
+    opacity: 1;
+    pointer-events: auto;
+}
 
-    .patient-detail-card, .empty-bed-card {
-        background-color: #e9ecef;
-        border-radius: 15px;
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        color: #212529;
-        flex-shrink: 0;
-        min-height: 120px;
-    }
-    .patient-detail-card .patient-icon {
-        width: 60px; height: 60px;
-        margin-right: 15px; flex-shrink: 0;
-    }
-    .patient-detail-card .patient-info-block {
-        flex-grow: 1; text-align: left;
-    }
-    .patient-info-block .name { font-weight: 700; font-size: 1.4em; }
-    .patient-info-block .details { font-size: 1.1em; color: #495057; }
+/* --- 확대 시 상세 보기 디자인 --- */
+.patient-list-container {
+    width: 100%;
+    height: 100%;
+    display: none;
+    flex-direction: column;
+}
 
-    .bed-number-box {
-        background-color: #ffffff; /* 모든 침대 번호 박스는 흰색 배경 */
-        border-radius: 10px;
-        width: 60px;
-        height: 100px;
-        font-size: 1.5em;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        margin-left: auto;
-        color: #212529; /* 글자색은 어둡게 */
-    }
-    /* ▼▼▼ [수정] '비어 있음' 카드 스타일 ▼▼▼ */
-    .empty-bed-card {
-        display: flex; /* Flexbox 레이아웃 사용 */
-        align-items: center; /* 세로 중앙 정렬 */
-        background-color: #6c757d;
-        color: #e9ecef;
-        font-weight: 500;
-        border-radius: 15px;
-        padding: 10px;
-        min-height: 80px;
-    }
-    .empty-bed-card span {
-        margin: 0 auto; /* [핵심] 남는 공간을 모두 여백으로 만들어 중앙에 위치시킴 */
-        font-size: 1.8em;
-    }
+/* 2열 침대 그리드 */
+.bed-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 120px;
+    padding-top: 15px;
+    height: 100%;
+    overflow-y: auto;
+}
+.bed-grid-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
 
-    /* ▼▼▼ [수정] 환자 아이콘 스타일 확인/추가 ▼▼▼ */
-    .patient-detail-card .patient-icon {
-        width: 60px;
-        height: 60px;
-        margin-right: 15px;
-        flex-shrink: 0;
-    }
+.patient-detail-card, .empty-bed-card {
+    background-color: #c6f6d5; /* 옅은 민트 */
+    border-radius: 15px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    color: #234e52; /* 딥블루-그린 */
+    flex-shrink: 0;
+    min-height: 120px;
+}
+.patient-detail-card .patient-icon {
+    width: 60px; height: 60px;
+    margin-right: 15px; flex-shrink: 0;
+}
+.patient-detail-card .patient-info-block {
+    flex-grow: 1; text-align: left;
+}
+.patient-info-block .name { font-weight: 700; font-size: 1.4em; }
+.patient-info-block .details { font-size: 1.1em; color: #040405; /* 의료 파랑 강조 */ }
+
+.bed-number-box {
+    background-color: #ffffff;
+    border-radius: 10px;
+    width: 60px;
+    height: 100px;
+    font-size: 1.5em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    color: #020916; /* 의료 파랑 */
+}
+/* '비어 있음' 카드 스타일 */
+.empty-bed-card {
+    display: flex;
+    align-items: center;
+    background-color: #e2e8f0; /* 아주 연회색 */
+    color: #0e1118;
+    font-weight: 500;
+    border-radius: 15px;
+    padding: 10px;
+    min-height: 80px;
+}
+.empty-bed-card span {
+    margin: 0 auto;
+    font-size: 1.8em;
+}
+
+/* 환자 아이콘 스타일 */
+.patient-detail-card .patient-icon {
+    width: 60px;
+    height: 60px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
 </style>
 
 <div class="rooms-container">
