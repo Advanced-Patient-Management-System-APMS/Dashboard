@@ -199,6 +199,18 @@ $(document).on('click', '.room-box', function(e) {
                     else if (patientData && patientData.latest_event_type === 'absent') {
                         iconHtml = `<img src="/static/icons/absent_icon.png" alt="Absent" class="patient-icon">`;
                     } 
+                    else if (patientData && patientData.latest_event_type === 'meal') {
+                        iconHtml = `<img src="/static/icons/meal_icon.png" alt="Meal" class="patient-icon">`;
+                    } 
+                    else if (patientData && patientData.latest_event_type === 'emergency') {
+                        iconHtml = `<img src="/static/icons/emergency_icon.png" alt="Emergency" class="patient-icon">`;
+                    }
+                    else if (patientData && patientData.latest_event_type === 'sleeping') {
+                        iconHtml = `<img src="/static/icons/sleeping_icon.png" alt="Sleeping" class="patient-icon">`;
+                    }
+                    else if (patientData && patientData.latest_event_type === 'examination') {
+                        iconHtml = `<img src="/static/icons/examination_icon.png" alt="Examination" class="patient-icon">`;
+                    }  
 
                     cardHtml = `
                         <div class="patient-detail-card">

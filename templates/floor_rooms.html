@@ -225,6 +225,14 @@
                                         <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
                                     {% elif p.latest_event_type == 'absent' %}
                                         <img src="{{ url_for('static', filename='icons/absent_icon.png') }}" alt="Absent">
+                                    {% elif p.latest_event_type == 'meal' %}
+                                        <img src="{{ url_for('static', filename='icons/meal_icon.png') }}" alt="Meal">
+                                    {% elif p.latest_event_type == 'emergency' %}
+                                        <img src="{{ url_for('static', filename='icons/emergency_icon.png') }}" alt="emergrency">
+                                    {% elif p.latest_event_type == 'sleeping' %}
+                                        <img src="{{ url_for('static', filename='icons/sleeping_icon.png') }}" alt="sleeping">
+                                    {% elif p.latest_event_type == 'examination' %}
+                                        <img src="{{ url_for('static', filename='icons/examination_icon.png') }}" alt="examination">
                                     {% endif %}
                                 </div>
                                 <div class="separator"></div>
@@ -260,6 +268,14 @@
                                         <img src="{{ url_for('static', filename='icons/present_icon.png') }}" alt="Present">
                                     {% elif p.latest_event_type == 'absent' %}
                                         <img src="{{ url_for('static', filename='icons/absent_icon.png') }}" alt="Absent">
+                                    {% elif p.latest_event_type == 'meal' %}
+                                        <img src="{{ url_for('static', filename='icons/meal_icon.png') }}" alt="Meal">
+                                    {% elif p.latest_event_type == 'emergency' %}
+                                        <img src="{{ url_for('static', filename='icons/emergency_icon.png') }}" alt="emergrency">
+                                    {% elif p.latest_event_type == 'sleeping' %}
+                                        <img src="{{ url_for('static', filename='icons/sleeping_icon.png') }}" alt="sleeping">
+                                    {% elif p.latest_event_type == 'examination' %}
+                                        <img src="{{ url_for('static', filename='icons/examination_icon.png') }}" alt="examination">
                                     {% endif %}
                                 </div>
                                 <div class="separator"></div>
