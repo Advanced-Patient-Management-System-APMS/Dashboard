@@ -219,6 +219,9 @@
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
                         {% for p in room.patients[:6] %}
+
+                            {% if p.patient_name %}
+
                             <div class="preview-item">
                                 <div class="preview-icon">
                                     {% if p.latest_event_type == 'present' %}
@@ -233,13 +236,22 @@
                                         <img src="{{ url_for('static', filename='icons/sleeping_icon.png') }}" alt="sleeping">
                                     {% elif p.latest_event_type == 'examination' %}
                                         <img src="{{ url_for('static', filename='icons/examination_icon.png') }}" alt="examination">
+                                    {% elif p.latest_event_type == 'No_wear' %}
+                                        <img src="{{ url_for('static', filename='icons/No_wear_icon.png') }}" alt="No Wear">
+                                    {% elif p.latest_event_type == 'awaken' %}
+                                        <img src="{{ url_for('static', filename='icons/awaken_icon.png') }}" alt="Awaken">
                                     {% endif %}
                                 </div>
                                 <div class="separator"></div>
                                 <div class="preview-name">
                                     <span>{{ p.patient_name }}</span>
+
+
+
                                 </div>
                             </div>
+
+                        {% endif %}
                         {% endfor %}
                     {% else %}
                         <p class="text-muted text-center mt-3"></p>
@@ -262,6 +274,8 @@
                 <div class="patient-preview-list">
                     {% if room.patients and room.patients|length > 0 %}
                         {% for p in room.patients[:6] %}
+                            {% if p.patient_name %}
+                                
                             <div class="preview-item">
                                 <div class="preview-icon">
                                     {% if p.latest_event_type == 'present' %}
@@ -276,15 +290,22 @@
                                         <img src="{{ url_for('static', filename='icons/sleeping_icon.png') }}" alt="sleeping">
                                     {% elif p.latest_event_type == 'examination' %}
                                         <img src="{{ url_for('static', filename='icons/examination_icon.png') }}" alt="examination">
+                                    {% elif p.latest_event_type == 'No_wear' %}
+                                        <img src="{{ url_for('static', filename='icons/No_wear_icon.png') }}" alt="No Wear">
+                                    {% elif p.latest_event_type == 'awaken' %}
+                                        <img src="{{ url_for('static', filename='icons/awaken_icon.png') }}" alt="Awaken">
                                     {% endif %}
                                 </div>
                                 <div class="separator"></div>
                                 <div class="preview-name">
                                     <span>{{ p.patient_name }}</span>
+
                                 </div>
                             </div>
-                        {% endfor %}
-                    {% else %}
+
+                            {% endif %}    
+                            {% endfor %}
+                        {% else %}
                         <p class="text-muted text-center mt-3"></p>
                     {% endif %}
                 </div>

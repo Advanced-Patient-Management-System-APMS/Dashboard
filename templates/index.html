@@ -100,6 +100,8 @@
         }
 
     </style>
+    <!-- 차트가 그려질 canvas 태그를 미리 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -122,7 +124,12 @@
         <div class="floor-btn active" data-floor="1">1층</div>
         <div class="floor-btn" data-floor="2">2층</div>
         <div class="floor-btn" data-floor="3">3층</div>
+        
         <hr style="margin: 20px 25px; border-color: #495057;">
+
+        <a href="{{ url_for('fall_log_page') }}" class="floor-btn" style="text-decoration: none;">
+            <i class="fas fa-clipboard-list"></i> &nbsp; 낙상 감지 이력
+        </a>
         <a href="{{ url_for('register_patient') }}" class="floor-btn" style="text-decoration: none;">
             <i class="fas fa-user-plus"></i> &nbsp; 환자 등록
         </a>
@@ -155,7 +162,12 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body" id="patientDetailBody">
-        <!-- 환자 상세 정보가 여기에 채워집니다. -->
+        <div id="patient-basic-info-modal">
+
+        </div>
+
+        <canvas id="patientChartCanvas" width="400" height="200" style="margin-top: 15px;"></canvas>
+        
       </div>
     </div>
   </div>
@@ -172,6 +184,9 @@ $(function() {
     let isEmergencyMuted = false;
     let detailModal = new bootstrap.Modal(document.getElementById('patientDetailModal'));
     
+    // ▼▼▼ 3-A. [추가] 차트 객체를 저장할 전역 변수 ▼▼▼
+    let patientChart;
+
     // ▼▼▼ [추가] Bootstrap 모달 이벤트 감지 ▼▼▼
     const patientModalElement = document.getElementById('patientDetailModal');
     // 모달이 보여지기 시작하면, modalIsOpen를 true로 설정
@@ -321,7 +336,12 @@ $(function() {
                     } else {
                         cardHtml = `<div class="empty-bed-card"><span>비어 있음</span><div class="bed-number-box">${bed.bed_number}</div></div>`;
                     }
-                    if (bed.bed_number <= 4) { leftColumnHtml += cardHtml; } else { rightColumnHtml += cardHtml; }
+
+                // ▼▼▼ [디버깅 코드 추가] ▼▼▼
+                console.log("현재 침대 번호:", bed.bed_number, " / 기준:", 3);
+                // ▲▲▲ [디버깅 코드 추가] ▲▲▲
+
+                    if (bed.bed_number <= 3) { leftColumnHtml += cardHtml; } else { rightColumnHtml += cardHtml; }
                 });
             }
             var finalHtml = `
@@ -341,22 +361,37 @@ $(function() {
         if (!patientId) return;
 
         $.get('/api/patient_detail/' + patientId, function(data) {
-            if (data.error) { console.error(data.error); return; }
-            $('#patientDetailTitle').text(`${data.info.patient_name} (${data.info.age}세/${data.info.gender}) 님 상세 정보`);
-            var logsHtml = '<h5>최신 스마트링 데이터</h5><div class="log-table"><table class="table table-dark table-striped table-hover"><thead><tr><th>측정시간</th><th>심박수(bpm)</th><th>산소포화도(%)</th></tr></thead><tbody>';
-            if (data.logs.length > 0) {
-                data.logs.forEach(function(log) {
-                    logsHtml += `<tr><td>${new Date(log.timestamp).toLocaleString('ko-KR')}</td><td>${log.heartrate || '-'}</td><td>${log.spo2 || '-'}</td></tr>`;
-                });
-            } else {
-                logsHtml += '<tr><td colspan="3" class="text-center">기록된 데이터가 없습니다.</td></tr>';
+            if (data.error) { 
+                console.error(data.error); 
+                alert(data.error); //사용자에게도 오류 알림
+                return; 
             }
-            logsHtml += '</tbody></table></div>';
-            var infoHtml = `<h5>기본 정보</h5><ul class="list-group list-group-flush"><li class="list-group-item bg-transparent text-white"><strong>병실:</strong> ${data.info.room_number}호 ${data.info.bed_number}번 침대</li><li class="list-group-item bg-transparent text-white"><strong>병명:</strong> ${data.info.disease || '정보 없음'}</li></ul>`;
-            $('#patientDetailBody').html(infoHtml + logsHtml);
+
+            // 1. 모달 제목 설정
+            $('#patientDetailTitle').text(`${data.info.patient_name} (${data.info.age}세/${data.info.gender}) 님 상세 정보`);
+            
+            // 2. 기본 정보 HTML 생성
+            // (참고: 새 API는 병실/침대 번호를 반환하지 않으므로 병명만 표시)
+            var infoHtml = `<h5>기본 정보</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item bg-transparent text-white">
+                        <strong>병명:</strong> ${data.info.disease || '정보 없음'}
+                    </li>
+                </ul>`;
+            
+            // 3. (2단계에서 수정한) #patient-basic-info-modal 영역에 기본 정보 주입
+            // (기존 $('#patientDetailBody').html(...) 대신 이 코드를 사용)
+            $('#patient-basic-info-modal').html(infoHtml);
+
+            // 4. [핵심] 테이블(logsHtml) 대신 'renderPatientChart' 함수 호출
+            // (이 함수는 3-C 단계에서 index.html 스크립트 맨 끝에 추가하셔야 합니다)
+            renderPatientChart(data.logs); 
+            
+            // 5. 모달 표시 (기존과 동일)
             detailModal.show();
         });
     });
+
 
 // ▼▼▼ [수정] 배너 닫기 버튼 클릭 이벤트 ▼▼▼
     $('#emergency-modal-close-btn').on('click', function() {
@@ -401,9 +436,78 @@ $(function() {
         e.stopPropagation();
         $('#slide-menu').toggleClass('open');
     });
+
+// ▼▼▼ 3-C. [추가] 차트를 그리고 업데이트하는 함수 ▼▼▼
+    /**
+     * @param {Array} logs - API에서 받은 로그 배열
+     * (이전 단계 app.py API 기준: log_timestamp, heart_rate, spo2 키를 포함)
+     */
+    function renderPatientChart(logs) {
+        const ctx = document.getElementById('patientChartCanvas').getContext('2d');
+        
+        // 'logs'는 DB에서 DESC(최신순)로 정렬했으므로, 차트 표시는 reverse() (오래된순)가 필요
+        const labels = logs.map(log => new Date(log.log_timestamp).toLocaleTimeString('ko-KR')).reverse();
+        const hrData = logs.map(log => log.heart_rate).reverse();
+        const spo2Data = logs.map(log => log.spo2).reverse();
+
+        // 기존 차트가 있다면 파괴 (중복 방지)
+        if (patientChart) {
+            patientChart.destroy();
+        }
+
+        patientChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Heart Rate (HR)',
+                        data: hrData,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: false,
+                        yAxisID: 'y-axis-hr' // Y축 ID
+                    },
+                    {
+                        label: 'SPO2 (%)',
+                        data: spo2Data,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: false,
+                        yAxisID: 'y-axis-spo2' // Y축 ID
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                title: { display: true, text: '최근 바이탈 사인 (최근 20개)', fontColor: '#f8f9fa' },
+                scales: {
+                    yAxes: [
+                        {
+                            id: 'y-axis-hr', // HR 축
+                            type: 'linear',
+                            position: 'left',
+                            ticks: { fontColor: 'rgba(255, 99, 132, 1)', min: 40, max: 160 }
+                        },
+                        {
+                            id: 'y-axis-spo2', // SPO2 축
+                            type: 'linear',
+                            position: 'right',
+                            ticks: { fontColor: 'rgba(54, 162, 235, 1)', min: 80, max: 100 },
+                            gridLines: { drawOnChartArea: false, color: '#6c757d' } // 겹치지 않게
+                        }
+                    ],
+                    xAxes: [{ ticks: { fontColor: '#f8f9fa' }, gridLines: { color: '#6c757d' } }] // X축 (시간)
+                },
+                legend: { labels: { fontColor: '#f8f9fa' } }
+            }
+        });
+    }
+
+
+
 });
 </script>
 
 </body>
 </html>
-

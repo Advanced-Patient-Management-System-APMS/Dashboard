@@ -3,6 +3,7 @@ import mysql.connector
 from flask_bcrypt import Bcrypt
 import os # ⭐️ 1. import os
 from werkzeug.utils import secure_filename # ⭐️ 2. import secure_filename
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -174,14 +175,24 @@ def api_floor_rooms(floor_num):
     try:
         cur.execute("""
             SELECT 
-                r.room_number,
+                r.room_number, 
+                p.patient_id, 
+                p.patient_name, 
+                p.age, 
+                p.gender, 
                 b.bed_number,
-                COALESCE(p.patient_name, '') AS patient_name,
-                COALESCE(p.age, 0)          AS age,
-                COALESCE(p.gender, '')       AS gender
+                
+                -- (추가) events 테이블에서 최신 이벤트를 가져옵니다.
+                (SELECT e.event_type 
+                 FROM events e 
+                 WHERE e.patient_id = p.patient_id
+                 ORDER BY e.event_timestamp DESC 
+                 LIMIT 1
+                ) AS latest_event_type
+
             FROM rooms r
             LEFT JOIN beds b ON r.room_id = b.room_id
-            LEFT JOIN patients p ON p.bed_id = b.bed_id
+            LEFT JOIN patients p ON b.bed_id = p.bed_id 
             WHERE r.floor = %s
             ORDER BY r.room_number, b.bed_number
         """, [floor_num])
@@ -192,6 +203,7 @@ def api_floor_rooms(floor_num):
             rooms_dict[rn] = {'name': f"{rn}호", 'patients': []}
         for r in results:
             rn = str(r['room_number'])
+
             if rn in rooms_dict:
                 rooms_dict[rn]['patients'].append(r)
         data = list(rooms_dict.values())
@@ -256,6 +268,177 @@ def upload_video():
     else:
         print(f"❌ [Upload] 허용되지 않는 파일 형식: {file.filename}")
         return jsonify({'error': 'Invalid file type'}), 400
+
+# ---------------------------------------------------
+# ⭐️ 7. [최종 수정] 환자 상세 정보 (HR/SPO2) API
+# (DDL에 맞춰 'heartrate' 및 'timestamp' 컬럼 사용)
+# ---------------------------------------------------
+@app.route('/api/patient_detail/<int:patient_id>')
+def api_patient_detail(patient_id):
+    """
+    특정 환자의 기본 정보와 최근 스마트링 로그(HR, SPO2)를 반환합니다.
+    (DDL 스키마에 맞춰 'timestamp' 컬럼을 사용하도록 수정됨)
+    """
+    conn, cur = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'DB 연결 실패'}), 500
+    
+    try:
+        # 1. 환자 기본 정보 조회
+        cur.execute("""
+            SELECT patient_name, disease, age, gender 
+            FROM patients 
+            WHERE patient_id = %s
+        """, (patient_id,))
+        patient_info = cur.fetchone()
+
+        if not patient_info:
+            close_db_connection(conn, cur)
+            return jsonify({'error': '해당 환자 정보를 찾을 수 없습니다.'}), 404
+
+        # 2. 스마트링 최근 로그 조회 (최근 20개)
+        # ▼▼▼ [수정] DDL에 맞게 'log_timestamp' -> 'timestamp'로 변경 ▼▼▼
+        cur.execute("""
+            SELECT heartrate, spo2, timestamp
+            FROM smartring_logs
+            WHERE patient_id = %s
+            ORDER BY timestamp DESC
+            LIMIT 20
+        """, (patient_id,))
+        smartring_logs = cur.fetchall()
+        
+        # 3. 날짜/시간 객체(datetime)를 JSON이 읽을 수 있는 문자열로 변환
+        logs_list = []
+        for log in smartring_logs:
+            logs_list.append({
+                'heart_rate': log['heartrate'], # (JS를 위해 'heart_rate'로 별칭 부여)
+                'spo2': log['spo2'],
+                # ▼▼▼ [수정] DDL에 맞게 log['log_timestamp'] -> log['timestamp']로 변경 ▼▼▼
+                # (JS를 위해 'log_timestamp'로 별칭 부여)
+                'log_timestamp': log['timestamp'].isoformat() if log['timestamp'] else None
+            })
+
+        return jsonify({
+            'info': patient_info,
+            'logs': logs_list  # 변환된 리스트 반환
+        })
+
+    except Exception as e:
+        print(f"❌ Error fetching patient detail for ID {patient_id}: {e}")
+        return jsonify({'error': '환자 상세 정보 조회 중 오류 발생'}), 500
+    finally:
+        close_db_connection(conn, cur)
+
+# ---------------------------------------------------
+# ⭐️ 8. [추가] 긴급 상황 확인 API (이게 404의 원인!)
+# ---------------------------------------------------
+@app.route('/api/check_emergencies')
+def api_check_emergencies():
+    # (이전 답변에 드렸던 코드 내용...)
+    # (긴 코드 생략)
+    conn, cur = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'DB 연결 실패'}), 500
+    try:
+        query = """
+            WITH LatestEvents AS (
+                SELECT patient_id, event_type, event_value,
+                       ROW_NUMBER() OVER(PARTITION BY patient_id ORDER BY event_timestamp DESC) as rn
+                FROM events
+            )
+            SELECT p.patient_name, r.room_number, le.event_value
+            FROM LatestEvents le
+            JOIN patients p ON le.patient_id = p.patient_id
+            JOIN beds b ON p.bed_id = b.bed_id
+            JOIN rooms r ON b.room_id = r.room_id
+            WHERE le.rn = 1 AND le.event_type = 'emergency';
+        """
+        cur.execute(query)
+        emergencies = cur.fetchall()
+        return jsonify({'emergencies': emergencies})
+    except Exception as e:
+        print(f"❌ Error checking emergencies: {e}")
+        return jsonify({'error': '긴급 호출 확인 중 오류 발생'}), 500
+    finally:
+        close_db_connection(conn, cur)
+
+
+# ---------------------------------------------------
+# ⭐️ 9. [추가] '낙상 감지 이력' API 
+# (fall_detection_log.html이 호출하는 API)
+# ---------------------------------------------------
+@app.route('/api/fall_events')
+def api_fall_events():
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    # 1. JavaScript에서 보낸 날짜 파라미터(start, end) 받기
+    start_date_str = request.args.get('start')
+    end_date_str = request.args.get('end')
+
+    if not start_date_str or not end_date_str:
+        return jsonify({"error": "날짜 범위를 입력해주세요"}), 400
+
+    # 2. 날짜 문자열을 datetime 객체로 변환
+    try:
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+    except ValueError:
+        return jsonify({"error": "날짜 형식이 올바르지 않습니다 (YYYY-MM-DD)"}), 400
+
+    conn, cur = get_db_connection()
+    if not conn:
+        return jsonify({'error': 'DB 연결 실패'}), 500
+    
+    try:
+        # 3. DB에서 '낙상 감지' 이력 조회 (event_status 컬럼 없이 수정됨)
+        query = """
+            SELECT 
+                e.event_timestamp,
+                r.room_number,
+                p.patient_name
+            FROM events e
+            JOIN patients p ON e.patient_id = p.patient_id
+            JOIN beds b ON p.bed_id = b.bed_id
+            JOIN rooms r ON b.room_id = r.room_id
+            WHERE 
+                e.event_value = '낙상 감지' 
+                AND e.event_timestamp BETWEEN %s AND %s
+            ORDER BY 
+                e.event_timestamp DESC
+        """
+        cur.execute(query, (start_date, end_date))
+        raw_events = cur.fetchall()
+        
+        # 4. 결과를 JSON 형식에 맞게 가공
+        events_list = []
+        for event in raw_events:
+            events_list.append({
+                'time': event['event_timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
+                'room': f"{event['room_number']}호",
+                'patient': event['patient_name'],
+                # DB에 status 컬럼이 없으므로, 'pending'으로 고정
+                'status': 'pending' 
+            })
+        
+        return jsonify(events_list)
+
+    except Exception as e:
+        print(f"❌ Error fetching fall events: {e}")
+        return jsonify({'error': '낙상 이력 조회 중 오류 발생'}), 500
+    finally:
+        close_db_connection(conn, cur)
+
+
+
+
+@app.route('/fall_log')
+def fall_log_page():
+    if 'username' not in session:
+        flash("로그인이 필요합니다.")
+        return redirect(url_for('login'))
+
+    return render_template('fall_detection_log.html')
 
 # --- 서버 실행 ---
 if __name__ == '__main__':
